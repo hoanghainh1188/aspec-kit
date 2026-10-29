@@ -1,0 +1,38 @@
+{
+  "name": "create-aspec-kit",
+  "version": "0.1.0",
+  "description": "Scaffold a new spec-driven project with Claude Code and Japanese design intake",
+  "type": "module",
+  "bin": {
+    "create-aspec-kit": "./bin/run.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "spec-driven",
+    "aspec-kit",
+    "claude-code",
+    "spec-kit",
+    "japanese",
+    "brse",
+    "scaffold",
+    "cli"
+  ],
+  "author": "hoanghainh1188",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hoanghainh1188/aspec-kit.git",
+    "directory": "packages/create-aspec-kit"
+  },
+  "bugs": {
+    "url": "https://github.com/hoanghainh1188/aspec-kit/issues"
+  },
+  "homepage": "https://github.com/hoanghainh1188/aspec-kit#readme"
+}
