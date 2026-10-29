@@ -96,7 +96,7 @@ export async function main() {
   // Handle help flag
   if (args.includes("--help") || args.includes("-h")) {
     printBanner(pkg.version);
-    console.log(`Usage: npx @hoanghainh1188/aspec-kit [project-directory] [options]
+    console.log(`Usage: npx @hoanghainh/aspec-kit [project-directory] [options]
 
 Options:
   -v, --version        Display CLI version
@@ -107,9 +107,9 @@ Options:
   --clean              Clean up sample feature
 
 Examples:
-  npx @hoanghainh1188/aspec-kit my-app
-  npx @hoanghainh1188/aspec-kit my-app --yes
-  npx @hoanghainh1188/aspec-kit my-app --steward @lead-engineer --clean
+  npx @hoanghainh/aspec-kit my-app
+  npx @hoanghainh/aspec-kit my-app --yes
+  npx @hoanghainh/aspec-kit my-app --steward @lead-engineer --clean
 `);
     return;
   }

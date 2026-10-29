@@ -1,4 +1,4 @@
-# @hoanghainh1188/aspec-kit
+# @hoanghainh/aspec-kit
 
 CLI generator chính thức để khởi tạo dự án với **aspec-kit** — Template phát triển hướng đặc tả (Spec-Driven Development) kết hợp Claude Code và đọc tài liệu thiết kế tiếng Nhật (基本設計, 詳細設計, Figma).
 
@@ -7,19 +7,19 @@ CLI generator chính thức để khởi tạo dự án với **aspec-kit** — 
 Chạy một trong các lệnh sau tại terminal:
 
 ```bash
-npx @hoanghainh1188/aspec-kit my-project
+npx @hoanghainh/aspec-kit my-project
 # hoặc
-npm create @hoanghainh1188/aspec-kit@latest my-project
+npm create @hoanghainh/aspec-kit@latest my-project
 # hoặc
-pnpm create @hoanghainh1188/aspec-kit my-project
+pnpm create @hoanghainh/aspec-kit my-project
 # hoặc
-yarn create @hoanghainh1188/aspec-kit my-project
+yarn create @hoanghainh/aspec-kit my-project
 ```
 
 ## Cú pháp & Tùy chọn (Usage & Options)
 
 ```text
-npx @hoanghainh1188/aspec-kit [project-directory] [options]
+npx @hoanghainh/aspec-kit [project-directory] [options]
 ```
 
 | Tùy chọn (Flags) | Mô tả | Mặc định |
@@ -36,13 +36,13 @@ npx @hoanghainh1188/aspec-kit [project-directory] [options]
 
 ```bash
 # 1. Chế độ tương tác từng bước (Interactive - khuyên dùng)
-npx @hoanghainh1188/aspec-kit my-app
+npx @hoanghainh/aspec-kit my-app
 
 # 2. Chế độ tự động hóa hoàn toàn (CI / Non-interactive)
-npx @hoanghainh1188/aspec-kit my-app --yes
+npx @hoanghainh/aspec-kit my-app --yes
 
 # 3. Chỉ định sẵn Steward và dọn dẹp feature mẫu
-npx @hoanghainh1188/aspec-kit my-app --steward @hoanghainh1188 --clean
+npx @hoanghainh/aspec-kit my-app --steward @hoanghainh1188 --clean
 ```
 
 ---

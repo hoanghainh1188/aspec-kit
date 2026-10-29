@@ -1,5 +1,5 @@
 {
-  "name": "@hoanghainh1188/aspec-kit",
+  "name": "@hoanghainh/aspec-kit",
   "version": "0.1.0",
   "description": "Scaffold a new spec-driven project with Claude Code and Japanese design intake",
   "type": "module",
