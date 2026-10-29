@@ -1,113 +1,131 @@
-# aspec-kit — Template dự án tích hợp Spec Kit + đọc tài liệu thiết kế tiếng Nhật
+# aspec-kit — Spec-Driven Development Framework with Claude Code & Japanese Design Intake
 
-Template cho các dự án greenfield dùng Claude Code, đặc biệt phù hợp với bối cảnh **BrSE làm việc với khách hàng Nhật**: có tài liệu basic design (基本設計), detail design (詳細設計), và Figma làm nguồn thiết kế đầu vào.
+[![npm version](https://img.shields.io/npm/v/@hoanghainh/aspec-kit.svg)](https://www.npmjs.com/package/@hoanghainh/aspec-kit)
+[![CI Status](https://github.com/hoanghainh1188/aspec-kit/actions/workflows/smoke-test.yml/badge.svg)](https://github.com/hoanghainh1188/aspec-kit/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Spec Kit](https://img.shields.io/badge/Powered%20by-GitHub%20Spec%20Kit-blue.svg)](https://github.com/github/spec-kit)
 
-Tích hợp:
-- **[GitHub Spec Kit](https://github.com/github/spec-kit)** làm khung xương spec-driven (constitution + specify → clarify → plan → tasks → analyze → implement)
-- **4 subagent chuyên biệt** bù đắp phần Spec Kit không có: `design-intake` (đọc tài liệu Nhật + Figma qua MCP), `code-reviewer` (đối chiếu code với 4 nguồn sau khi implement), `security-reviewer` (pass bảo mật OWASP + secret + PII), và `glossary-steward` (gác nhất quán thuật ngữ Nhật-Việt-Anh)
-- **Glossary Nhật-Việt-Anh** làm nguồn thuật ngữ chung
-- **Permission gate** cấu hình sẵn theo nguyên tắc deny → ask → allow
+Production-ready greenfield project template and toolkit for **Claude Code**, specifically engineered for **Bridge Software Engineers (BrSE)** and development teams working with Japanese clients where upstream design artifacts come from **Basic Design (基本設計)**, **Detail Design (詳細設計)**, and **Figma**.
 
-## Có 3 cách dùng aspec-kit
+---
 
-### Cách 1: Khởi tạo nhanh qua CLI npm (khuyến nghị — nhanh nhất, zero-config)
+## Key Highlights
+
+- **[GitHub Spec Kit](https://github.com/github/spec-kit) Backbone**: End-to-end specification-driven pipeline (`constitution` -> `specify` -> `clarify` -> `plan` -> `tasks` -> `analyze` -> `implement`).
+- **4 Specialized Claude Code Subagents**: Fills the gap that raw Spec Kit does not cover:
+  - `design-intake`: Parses Japanese specifications and Figma (via MCP) into structured intake artifacts.
+  - `code-reviewer`: Cross-references implementation against 4 truth sources (constitution, spec, plan, tasks).
+  - `glossary-steward`: Guards terminology fidelity across Japanese, Vietnamese, and English in code and specs.
+  - `security-reviewer`: Specialized OWASP Top 10, secret detection, and PII audit pass.
+- **5-Tier Git-Backed Project Memory**: Externalizes knowledge in Git files to eliminate AI context drift without database infrastructure overhead.
+- **Zero-Conflict Team Workflow**: Combines GitHub Issue IDs for branch naming (`NNN-<slug>`) and timestamp-based specification paths to prevent collision during parallel feature development.
+
+---
+
+## 3 Ways to Use aspec-kit
+
+### Method 1: Instant Start via npm CLI (Recommended — Fastest, Zero-Config)
 
 ```bash
 npx @hoanghainh/aspec-kit my-project
-# hoặc
+# or
 npm create @hoanghainh/aspec-kit@latest my-project
 ```
 
-CLI sẽ tự động tải template mới nhất, hỏi cấu hình Steward CODEOWNERS, và tùy chọn dọn dẹp feature mẫu giúp bạn (hỗ trợ cờ `-y/--yes`, `--steward <handle>`, `--clean`, `--help` — xem chi tiết tại [`packages/aspec-kit/README.md`](packages/aspec-kit/README.md)). Sau đó chỉ cần:
+The CLI automatically fetches the latest template, interactively configures `.github/CODEOWNERS` with your Steward handle, and optionally cleans up the reference sample feature.
+
+Options: `-y/--yes`, `--steward <handle>`, `--clean`, `--help` (see [`packages/aspec-kit/README.md`](packages/aspec-kit/README.md)).
+
+After scaffolding:
 ```bash
 cd my-project
 bash bootstrap.sh
 ```
 
-### Cách 2: Dùng như GitHub template repo
+### Method 2: Use as GitHub Template Repository
 
-1. Fork/clone repo này lên GitHub tài khoản của bạn.
-2. Vào Settings → chọn "Template repository" để biến nó thành template.
-3. Với mỗi dự án mới, bấm "Use this template" → "Create a new repository".
-4. `git clone` repo mới về máy, chạy `bash bootstrap.sh` để hoàn tất setup (chạy `specify init` để tạo `.specify/` và các skill Spec Kit `/speckit-*` trong `.claude/skills/`).
-5. Chạy `/speckit-constitution` trong Claude Code — sau đó xem `docs/CONSTITUTION_APPEND.md` để bổ sung các article cho bối cảnh Nhật.
+1. Fork/clone this repository to your GitHub account.
+2. In repository Settings, check **"Template repository"**.
+3. For each new project, click **"Use this template"** -> **"Create a new repository"**.
+4. Clone your new repo locally, and run `bash bootstrap.sh` to install Spec Kit CLI and generate `.claude/skills/`.
+5. Launch Claude Code and run `/speckit-constitution`. Then consult [`docs/CONSTITUTION_APPEND.md`](docs/CONSTITUTION_APPEND.md) to add articles tailored for Japanese client contexts.
 
-### Cách 3: Cài đặt như Claude Code plugin (cho nhiều dự án đã có sẵn)
+### Method 3: Install as Claude Code Plugin (For Existing Projects)
 
-Cách này phù hợp khi bạn muốn dùng bộ agent + command cho **nhiều dự án đã có sẵn**, không phải chỉ dự án mới.
+Ideal when you want to equip existing codebases with aspec-kit agents and slash commands:
 
 ```bash
-# Trong Claude Code
+# Inside Claude Code
 /plugin marketplace add hoanghainh1188/aspec-kit
 /plugin install aspec-kit@hoanghainh1188
 ```
 
-Plugin sẽ cài 4 agent (`design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`) và command `/design-to-code` vào user scope (`~/.claude/`). Xem chi tiết ở `plugin/README.md`.
+Installs the 4 subagents (`design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`) and `/design-to-code` into user scope (`~/.claude/`). See details in [`plugin/README.md`](plugin/README.md).
 
-**Lưu ý**: cách plugin không tự tạo cấu trúc `docs/` hay chạy `specify init` — bạn cần làm những bước đó thủ công nếu dự án chưa có sẵn. Cách 1 (CLI) và Cách 2 (template repo) tự động hóa cả 2.
+---
 
-## Cấu trúc dự án được sinh ra
+## Directory Structure
 
-```
+```text
 <project>/
-├── CLAUDE.md                       Quy ước dự án, agent đọc đầu tiên
-├── bootstrap.sh                    Chạy specify init + bổ sung agent/command
+├── CLAUDE.md                       Core conventions read by AI agents first
+├── bootstrap.sh                    Runs specify init and integrates skills & hooks
 ├── .claude/
-│   ├── settings.json              Permission deny/ask/allow đã cấu hình sẵn
+│   ├── settings.json              Configured permission rules (deny -> ask -> allow)
 │   ├── agents/
-│   │   ├── design-intake.md       Đọc docs Nhật + Figma, sinh input cho /speckit-specify
-│   │   ├── code-reviewer.md       Review code sau /speckit-implement
-│   │   ├── security-reviewer.md   Pass bảo mật OWASP + secret + PII sau code-reviewer
-│   │   └── glossary-steward.md    Gác nhất quán thuật ngữ Nhật-Việt-Anh (pipeline + standalone)
+│   │   ├── design-intake.md       Extracts JP docs & Figma -> generates intake for /speckit-specify
+│   │   ├── code-reviewer.md       Post-implementation verification against 4 sources
+│   │   ├── security-reviewer.md   OWASP, secret detection, and PII audit
+│   │   └── glossary-steward.md    Guards JP-VI-EN terminology consistency
 │   ├── hooks/
-│   │   └── format.sh              Format-on-save hook (điền formatter theo stack)
+│   │   └── format.sh              Format-on-save hook triggered on file edit
 │   └── commands/
-│       └── design-to-code.md      Điều phối toàn bộ pipeline hybrid
+│       └── design-to-code.md      Hybrid orchestration runbook command
 ├── docs/
-│   ├── 00-glossary.md              Thuật ngữ 日本語 / VI / EN — nguồn duy nhất
-│   ├── 01-basic-design/            基本設計 gốc từ khách hàng (không sửa tay)
-│   ├── 02-detail-design/           詳細設計 gốc
-│   ├── 03-ui/                      Link Figma + snapshot
-│   ├── 04-decisions/               Câu trả lời cho /speckit-clarify (INDEX.md = mục lục tra nhanh)
-│   ├── 05-lessons.md               Bài học / gotcha kỹ thuật gặp khi code (append 1 dòng)
-│   ├── intake/                     Output của design-intake
-│   └── CONSTITUTION_APPEND.md      Gợi ý các article cho bối cảnh Nhật
-├── src/
-├── tests/
-├── .claude-plugin/                 Metadata và catalog cho Claude Code plugin
-│   ├── marketplace.json
-│   └── plugin.json
-└── plugin/                         Hướng dẫn sử dụng chế độ plugin
-    └── README.md
+│   ├── 00-glossary.md              Single source of truth for JP / VI / EN business terms
+│   ├── 01-basic-design/            基本設計 directly from client (read-only)
+│   ├── 02-detail-design/           詳細設計 directly from client (read-only)
+│   ├── 03-ui/                      Figma link registry & design snapshots
+│   ├── 04-decisions/               Decisions from /speckit-clarify (INDEX.md = lookup table)
+│   ├── 05-lessons.md               Technical gotchas and project lessons learned
+│   ├── intake/                     Output artifacts from design-intake
+│   └── CONSTITUTION_APPEND.md      Recommended constitution articles for JP projects
+├── src/                            Application source code (src/features/<slug>/)
+├── tests/                          Automated test suites
+├── packages/
+│   └── aspec-kit/                  Official CLI generator package (@hoanghainh/aspec-kit)
+├── .claude-plugin/                 Plugin and marketplace catalog metadata
+└── plugin/
+    └── README.md                   Plugin usage guide
 ```
 
-Sau khi chạy `bootstrap.sh`, thêm:
-```
+After running `bootstrap.sh`:
+```text
 ├── .specify/
-│   ├── memory/constitution.md      Do /speckit-constitution sinh
-│   ├── templates/                  Template Spec Kit
-│   └── scripts/                    Helper script Spec Kit
-├── .claude/skills/speckit-*/       Skills Spec Kit (constitution, specify, clarify, plan, tasks, analyze, implement, …)
-└── specs/                          Do Spec Kit sinh mỗi feature 1 thư mục
+│   ├── memory/constitution.md      Generated by /speckit-constitution
+│   ├── templates/                  Spec Kit templates
+│   └── scripts/                    Spec Kit helper scripts
+├── .claude/skills/speckit-*/       Spec Kit skills (specify, clarify, plan, tasks, analyze, implement...)
+└── specs/                          Feature specifications directory
 ```
 
-## Feature mẫu để tham khảo (xoá được)
+---
 
-Template kèm 1 feature mẫu tí hon — **予約承認 (duyệt đặt chỗ)** — để bạn thấy **cả chuỗi traceability
-lẫn hình dạng code** trước khi tự chạy (đường dẫn dạng code để xoá xong không để lại link chết):
-- `docs/intake/000-example-reservation.md` — output mẫu của `design-intake`
-- `docs/04-decisions/2026-01-01-approval-vs-confirm.md` — quyết định clarify mẫu
-- `specs/000-example-reservation/` — `spec.md` + `plan.md` + `tasks.md` mẫu (bình thường do Spec Kit sinh)
-- `src/features/example-reservation/` — **code + test mẫu** (hàm thuần + unit test cạnh nhau), minh hoạ
-  layout `src/features/<slug>/`, dùng thuật ngữ glossary trong tên, và TDD theo Article W
+## Reference Sample Feature (Removable)
 
-**Xoá trước khi làm dự án thật:**
+The template includes a miniature reference feature — **予約承認 (Reservation Approval)** — to demonstrate end-to-end traceability and code layout:
+- `docs/intake/000-example-reservation.md`: Sample output from `design-intake`.
+- `docs/04-decisions/2026-01-01-approval-vs-confirm.md`: Sample decision artifact.
+- `specs/000-example-reservation/`: Sample `spec.md`, `plan.md`, and `tasks.md`.
+- `src/features/example-reservation/`: Sample TypeScript implementation and unit tests illustrating TDD under Article W.
+
+**To clean up the sample feature before starting a real project:**
 ```bash
 rm -rf specs/000-example-reservation \
        src/features/example-reservation \
        docs/intake/000-example-reservation.md \
        docs/04-decisions/2026-01-01-approval-vs-confirm.md
-# Xóa dòng mẫu trong INDEX (giữ header + bảng trống / comment ví dụ):
+# Remove the sample entry from INDEX.md:
 python3 -c "
 from pathlib import Path
 p = Path('docs/04-decisions/INDEX.md')
@@ -115,53 +133,49 @@ lines = [l for l in p.read_text().splitlines() if '000-example-reservation' not 
 p.write_text('\n'.join(lines) + '\n')
 "
 ```
+*(Note: If you use `npx @hoanghainh/aspec-kit --clean`, this clean-up is done automatically).*
 
-## Workflow cho 1 feature
+---
 
-### Bước bạn thao tác
-1. **Tạo GitHub issue** cho feature (số issue = ID feature), rồi tạo branch `NNN-<slug>` với
-   `NNN` = số issue zero-pad ≥ 3 chữ số (VD issue #42 → `042-user-reservation`).
-2. **Đặt tài liệu nguồn** (không sửa nội dung gốc), mỗi feature 1 thư mục — **`<slug>` = phần sau
-   `NNN-` trên branch** (VD `042-user-reservation` → `user-reservation`):
-   - `docs/01-basic-design/<slug>/` — 基本設計 (user story / behavior)
-   - `docs/02-detail-design/<slug>/` — 詳細設計 (bảng field + validation, business rule / edge / error)
-   - `docs/03-ui/<slug>/figma-links.md` — link Figma + snapshot
-   > ⚠️ `Read` không parse `.docx/.xlsx/.pdf` nhị phân — kèm **bản export text/markdown** cạnh file gốc
-   > (hoặc cài Skill `docx/xlsx/pdf`). Cấu trúc + checklist nội dung đầy đủ: xem `README.md` trong từng
-   > thư mục `docs/01-03`.
-3. **Gõ `/design-to-code`** trong Claude Code, cung cấp đường dẫn tài liệu + link Figma khi được hỏi.
-4. Ở mỗi bước **[HANDOFF]**, copy lệnh `/speckit-*` mà Claude in ra, tự dán chạy, rồi báo lại.
-5. Duyệt ở mỗi **[DỪNG]** (review intake, analyze, test gate, deploy).
+## Feature Workflow
 
-> **Nhiều người cùng làm 1 dự án?** Xem [`docs/TEAM-WORKFLOW.md`](docs/TEAM-WORKFLOW.md) — quy ước
-> đánh số theo issue, branch/PR model, gác cổng glossary + constitution, và cách tránh conflict/lệch ngữ cảnh.
+### Human Interaction Steps
+1. **Create a GitHub Issue** for the feature (Issue # = Feature ID), then branch out as `NNN-<slug>` where `NNN` is zero-padded to at least 3 digits (e.g., Issue #42 -> `042-user-reservation`).
+2. **Place upstream specifications** in dedicated folders:
+   - `docs/01-basic-design/<slug>/` — 基本設計 (user stories & high-level behavior).
+   - `docs/02-detail-design/<slug>/` — 詳細設計 (field tables, validation rules, business edges, errors).
+   - `docs/03-ui/<slug>/figma-links.md` — Figma nodes and reference screenshots.
+   *(Note: For binary `.docx/.xlsx/.pdf` files, export text/markdown copies alongside the originals for direct tool parsing).*
+3. **Execute `/design-to-code`** in Claude Code, providing document paths when prompted.
+4. At each **[HANDOFF]** step, copy and run the precise `/speckit-*` command output by Claude.
+5. Review checkpoints at every **[PAUSE]** (intake review, analyze gate, test gate, deployment).
 
-### Sơ đồ workflow
+### Workflow Diagram
 
 ```mermaid
 flowchart TD
-    A["📁 Đặt tài liệu vào docs/01-03/"]:::user --> B["⌨️ Gõ /design-to-code"]:::user
-    B --> B2["Nạp memory: constitution + glossary<br/>+ decisions INDEX + lessons"]:::auto
-    B2 --> C["Tạo git branch NNN-feature"]:::auto
-    C --> D["design-intake đọc tài liệu → docs/intake/"]:::auto
-    D --> E{"DỪNG — review intake<br/>prompt + ambiguities"}:::stop
-    E --> F["/speckit-specify — prompt từ intake"]:::handoff
-    F --> G{"Có ambiguities?"}:::stop
-    G -- Có --> H["/speckit-clarify → docs/04-decisions/"]:::handoff
-    G -- Không --> I["/speckit-plan"]:::handoff
+    A["📁 Place design docs in docs/01-03/"]:::user --> B["⌨️ Run /design-to-code"]:::user
+    B --> B2["Recall memory: constitution + glossary<br/>+ decisions INDEX + lessons"]:::auto
+    B2 --> C["Create git branch NNN-feature"]:::auto
+    C --> D["design-intake reads docs → docs/intake/"]:::auto
+    D --> E{"PAUSE — Review intake<br/>prompt & ambiguities"}:::stop
+    E --> F["/speckit-specify — prompt from intake"]:::handoff
+    F --> G{"Ambiguities detected?"}:::stop
+    G -- Yes --> H["/speckit-clarify → docs/04-decisions/"]:::handoff
+    G -- No --> I["/speckit-plan"]:::handoff
     H --> I
     I --> J["/speckit-tasks"]:::handoff
-    J --> K{"DỪNG — /speckit-analyze<br/>còn cảnh báo?"}:::stop
-    K -- Có, sửa spec/plan/tasks --> F
-    K -- Không --> L["/speckit-implement → sinh code"]:::handoff
-    L --> M{"code-reviewer<br/>còn Blocking?"}:::auto
-    M -- Có --> L
-    M -- Không --> Q["glossary-steward<br/>đối chiếu term vs glossary"]:::auto
-    Q --> R{"security-reviewer<br/>(nếu đụng data/auth)<br/>còn Blocking?"}:::auto
-    R -- Có --> L
-    R -- Không --> N{"DỪNG — test gate<br/>lint/test/build xanh<br/>+ coverage ≥ ngưỡng?"}:::stop
-    N -- Đỏ --> L
-    N -- Xanh --> O["DỪNG — deploy theo CLAUDE.md"]:::stop
+    J --> K{"PAUSE — /speckit-analyze<br/>any warnings?"}:::stop
+    K -- Yes, fix spec/plan/tasks --> F
+    K -- No --> L["/speckit-implement → generate code"]:::handoff
+    L --> M{"code-reviewer<br/>any Blocking issues?"}:::auto
+    M -- Yes --> L
+    M -- No --> Q["glossary-steward<br/>verify terms vs glossary"]:::auto
+    Q --> R{"security-reviewer<br/>(if auth/data touched)<br/>any Blocking issues?"}:::auto
+    R -- Yes --> L
+    R -- No --> N{"PAUSE — test gate<br/>lint/test/build green<br/>+ coverage ≥ threshold?"}:::stop
+    N -- Red --> L
+    N -- Green --> O["PAUSE — deploy per CLAUDE.md"]:::stop
     O --> P["✅ Commit intake + decisions + specs"]:::user
 
     classDef user fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
@@ -170,76 +184,42 @@ flowchart TD
     classDef stop fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
 ```
 
-**Chú thích màu:**
-🟦 Bạn thao tác · 🟩 `[TỰ CHẠY]` Claude tự làm (git + subagent) · 🟨 `[HANDOFF]` bạn tự dán lệnh `/speckit-*` · 🟥 `[DỪNG]` checkpoint chờ duyệt
+**Step Categories:**
+- 🟦 **User Action**: Manual inputs and reviews.
+- 🟩 **[AUTO]**: Claude executes automatically (git branch, calling subagents).
+- 🟨 **[HANDOFF]**: User pastes and runs the `/speckit-*` command printed by Claude.
+- 🟥 **[PAUSE]**: Mandatory approval gate.
 
-### `/design-to-code` là runbook điều phối
-Nó **không tự chạy được** các slash command `/speckit-*` (Claude Code không cho command gọi
-command). Vì vậy có 2 loại bước:
+---
 
-| Loại | Ai làm | Gồm |
-|------|--------|-----|
-| **[TỰ CHẠY]** | Claude tự làm | tạo git branch, gọi subagent `design-intake`, `code-reviewer`, `glossary-steward`, `security-reviewer` |
-| **[HANDOFF]** | **Bạn tự dán lệnh** | Claude in `/speckit-x …`, bạn chạy rồi báo xong |
+## Team Workflow & Conflict Prevention
 
-Trình tự đầy đủ:
+When multiple team members collaborate on a single repository:
 
-1. `[TỰ CHẠY]` **nạp memory** — đọc + tóm tắt `constitution` + `docs/00-glossary.md` + `docs/04-decisions/INDEX.md` + `docs/05-lessons.md` + `CLAUDE.md` (recall bắt buộc, chống lệch ngữ cảnh)
-2. `[TỰ CHẠY]` tạo branch `NNN-<feature-slug>` (Spec Kit dùng tên branch để phát hiện feature)
-3. `[TỰ CHẠY]` `design-intake` đọc tài liệu → sinh `docs/intake/<NNN>-<slug>.md` (khớp tên branch)
-4. **[DỪNG]** bạn review file intake (prompt + ambiguities)
-5. `[HANDOFF]` `/speckit-specify <prompt từ intake>`
-6. `[HANDOFF]` `/speckit-clarify` (nếu có mâu thuẫn) → câu trả lời ghi vào `docs/04-decisions/` + append `INDEX.md`
-7. `[HANDOFF]` `/speckit-plan`
-8. `[HANDOFF]` `/speckit-tasks`
-9. **[DỪNG]** `/speckit-analyze` → sửa spec/plan/tasks nếu có cảnh báo trước khi implement
-10. `[HANDOFF]` `/speckit-implement` → sinh code thật
-11. `[TỰ CHẠY]` `code-reviewer` đối chiếu code với constitution + spec + plan + tasks (+ `docs/05-lessons.md`) → xử lý mọi **Blocking**
-12. `[TỰ CHẠY]` `glossary-steward` đối chiếu term code/spec vs `docs/00-glossary.md` → sửa term lệch (term **mới** → append thẳng trong branch feature; chỉ **SỬA/đổi tên** term đã có mới cần PR glossary riêng)
-13. `[TỰ CHẠY]` `security-reviewer` soi OWASP + secret + PII (chỉ khi feature đụng data/auth/API; nếu không thì tự SKIP) → xử lý mọi **Blocking**
-14. **[DỪNG] Test gate** — format tự chạy qua hook `.claude/hooks/format.sh`; verify `npm run lint/test/build` phải xanh **và coverage đạt ngưỡng constitution** (Article W — mặc định ≥ 80% business logic); gặp gotcha → append `docs/05-lessons.md`
-15. **[DỪNG] Deploy** — theo phương thức khai trong mục `## Deploy` của `CLAUDE.md`
+- **Feature ID = GitHub Issue Number**: Branch as `NNN-<slug>` (e.g., `#42` -> `042-user-reservation`). Global uniqueness guarantees zero branch collisions.
+- **Timestamped Specs Directory**: `specs/<YYYYMMDD-HHMMSS>-<slug>` ensures parallel spec generation never collides in Git.
+- **Physical Feature Isolation**: Code strictly under `src/features/<slug>/`. Shared directories (`src/shared/`, configs, routers) are modified with small, isolated commits.
+- **Shared Files Governance**:
+  - **ADDING** new terms to `docs/00-glossary.md` is allowed directly in the feature branch (Steward reviews during PR).
+  - **EDITING or DELETING** existing terms or amending `.specify/memory/constitution.md` requires an isolated PR approved by the Steward.
+- **Rebase Regularly**: Rebase onto `main` frequently; rerun `/speckit-analyze` to catch any drift when constitution or glossary updates.
 
-Cuối cùng, commit `docs/intake/`, `docs/04-decisions/`, `docs/05-lessons.md`, `specs/<feature>/` làm bằng chứng traceability.
+For comprehensive team guidelines, consult [`docs/TEAM-WORKFLOW.md`](docs/TEAM-WORKFLOW.md) and [`docs/PRODUCTION-READINESS.md`](docs/PRODUCTION-READINESS.md).
 
-## Làm việc nhóm (nhiều người / 1 dự án)
+---
 
-Để tránh **git conflict** và **lệch ngữ cảnh** khi nhiều người cùng làm:
+## Environment Prerequisites
 
-- **Feature ID = số issue GitHub** → branch `NNN-<slug>` (zero-pad ≥ 3 chữ số, VD `042-user-reservation`).
-  Số issue duy nhất toàn cục → không trùng khi chạy song song.
-- **1 người sở hữu 1 feature** end-to-end; branch ngắn hạn; PR `Closes #<issue>`; merge khi CI xanh + review pass.
-- **Cô lập code theo feature** → `src/features/<slug>/`; chỉ chạm vùng dùng chung (`src/shared/`, config)
-  khi thật cần, tách commit nhỏ để giảm merge conflict.
-- **Glossary + constitution** là file dùng chung: **THÊM** term mới → append ngay trong branch feature
-  (steward review khi mở PR); **SỬA** term đã có / đổi constitution → **PR riêng được steward duyệt**.
-- **Rebase `main` thường xuyên**; khi constitution/glossary đổi → chạy lại `/speckit-analyze` để bắt drift.
+- **Node.js**: >= 18.0.0
+- **Claude Code**: Latest release with subagent and slash command support.
+- **Spec Kit CLI**: Installed via `uv` or `pipx` (`uvx --from git+https://github.com/github/spec-kit.git specify init ...`).
+- **Git**: Installed and configured.
+- **Figma MCP Server** (Optional): Pre-configured for both `mcp__figma__*` and `mcp__claude_ai_Figma__*`. If omitted, `design-intake` gracefully falls back to local snapshots in `docs/03-ui/`.
 
-**2 việc setup thủ công (load-bearing — chưa làm thì gác cổng CODEOWNERS âm thầm vô hiệu):**
-1. Sửa `.github/CODEOWNERS`: thay `@your-lead-handle` bằng GitHub handle thật của steward.
-2. Bật **branch protection** cho `main`: *Require PR review* + *Require review from Code Owners*
-   + *Require status checks* (`template-smoke-test`) + *Require branches up to date*.
+---
 
-📖 Chi tiết đầy đủ (vòng đời feature, bảng điểm nóng conflict, xử lý cập nhật design giữa chừng):
-[`docs/TEAM-WORKFLOW.md`](docs/TEAM-WORKFLOW.md).
+## Contributing & License
 
-> 🔒 **Trước khi lên dự án thật**, chạy qua [`docs/PRODUCTION-READINESS.md`](docs/PRODUCTION-READINESS.md) —
-> checklist biến các gác cổng "tự khai" (coverage, review, secret) thành gate ép bằng CI/branch protection.
+Contributions are welcome! Please refer to [`CONTRIBUTING.md`](CONTRIBUTING.md) for local smoke testing procedures and pull request guidelines.
 
-## Yêu cầu môi trường
-
-- Claude Code (bản mới nhất, hỗ trợ subagent + command + settings.json)
-- `uv` hoặc `pipx` để cài Spec Kit CLI (`uvx --from git+https://github.com/github/spec-kit.git specify init ...`)
-- `git`
-- **Figma MCP server** — để `design-intake` đọc Figma tự động. Agent grant sẵn **cả 2 prefix phổ biến**:
-  `mcp__figma__*` (Figma Dev Mode local) và `mcp__claude_ai_Figma__*` (connector Claude.ai) — kết nối
-  kiểu nào cũng chạy, không cần sửa. Kiểm bằng `claude mcp list`; chỉ khi server tên khác cả 2 mới cần
-  thêm prefix vào `tools:` trong `.claude/agents/design-intake.md`. Không có Figma MCP thì `design-intake`
-  vẫn chạy — đọc link/snapshot trong `docs/03-ui/`.
-- **Skill đọc tài liệu** (`docx`, `xlsx`, `pdf`) — cần để `design-intake` trích nội dung file Office/PDF
-  nhị phân (tool `Read` thuần không parse được). Nếu skill chưa cài, chuẩn bị sẵn bản export
-  text/markdown của tài liệu đặt cạnh file gốc.
-
-## Giấy phép
-
-MIT — dùng thoải mái, sửa thoải mái. Nếu bạn cải tiến template, PR về là rất được hoan nghênh.
+Released under the [MIT License](LICENSE).
