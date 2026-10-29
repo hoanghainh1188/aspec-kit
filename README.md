@@ -13,9 +13,9 @@ Tích hợp:
 ### Cách 1: Khởi tạo nhanh qua CLI npm (khuyến nghị — nhanh nhất, zero-config)
 
 ```bash
-npx create-aspec-kit my-project
+npx @hoanghainh1188/aspec-kit my-project
 # hoặc
-npm create aspec-kit@latest my-project
+npm create @hoanghainh1188/aspec-kit@latest my-project
 ```
 
 CLI sẽ tự động tải template mới nhất, hỏi cấu hình Steward CODEOWNERS, và tùy chọn dọn dẹp feature mẫu giúp bạn. Sau đó chỉ cần:

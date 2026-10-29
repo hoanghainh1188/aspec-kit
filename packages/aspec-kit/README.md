@@ -1,17 +1,15 @@
-# create-aspec-kit
+# @hoanghainh1188/aspec-kit
 
 Official CLI generator to scaffold a new **aspec-kit** project (Spec-Driven Development with Claude Code & Japanese design docs intake).
 
 ## Quick Start
 
 ```bash
-npx create-aspec-kit my-project
+npx @hoanghainh1188/aspec-kit my-project
 # or
-npm create aspec-kit@latest my-project
+npm create @hoanghainh1188/aspec-kit@latest my-project
 # or
-pnpm create aspec-kit my-project
-# or
-yarn create aspec-kit my-project
+pnpm create @hoanghainh1188/aspec-kit my-project
 ```
 
 ## Features
