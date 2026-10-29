@@ -1,7 +1,13 @@
 # @hoanghainh/aspec-kit
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/hoanghainh1188/aspec-kit/main/assets/aspec-kit-banner.png" alt="aspec-kit banner" width="100%">
+</p>
+
 [![npm version](https://img.shields.io/npm/v/@hoanghainh/aspec-kit.svg)](https://www.npmjs.com/package/@hoanghainh/aspec-kit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> **Inspired by GitHub's Spec-Driven Development initiative**, `aspec-kit` is reimagined as an ultra-lightweight, zero-dependency toolkit tailored for **Claude Code** and AI-first engineering teams.
 
 Official CLI generator to scaffold a new **aspec-kit** project — an Agentic Spec-Driven Development (SDD) framework integrating **Claude Code** with Japanese design specifications intake (**Basic Design 基本設計**, **Detail Design 詳細設計**, and **Figma**).
 

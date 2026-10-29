@@ -1,9 +1,15 @@
 # aspec-kit — Spec-Driven Development Framework with Claude Code & Japanese Design Intake
 
+<p align="center">
+  <img src="assets/aspec-kit-banner.png" alt="aspec-kit banner" width="100%">
+</p>
+
 [![npm version](https://img.shields.io/npm/v/@hoanghainh/aspec-kit.svg)](https://www.npmjs.com/package/@hoanghainh/aspec-kit)
 [![CI Status](https://github.com/hoanghainh1188/aspec-kit/actions/workflows/smoke-test.yml/badge.svg)](https://github.com/hoanghainh1188/aspec-kit/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Spec Kit](https://img.shields.io/badge/Powered%20by-GitHub%20Spec%20Kit-blue.svg)](https://github.com/github/spec-kit)
+
+> **Inspired by GitHub's Spec-Driven Development initiative**, `aspec-kit` is reimagined as an ultra-lightweight, zero-dependency toolkit tailored for **Claude Code** and AI-first engineering teams.
 
 Production-ready greenfield project template and toolkit for **Claude Code**, specifically engineered for **Bridge Software Engineers (BrSE)** and development teams working with Japanese clients where upstream design artifacts come from **Basic Design (基本設計)**, **Detail Design (詳細設計)**, and **Figma**.
 
