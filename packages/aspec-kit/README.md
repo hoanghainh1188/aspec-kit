@@ -1,108 +1,124 @@
 # @hoanghainh/aspec-kit
 
-CLI generator chính thức để khởi tạo dự án với **aspec-kit** — Template phát triển hướng đặc tả (Spec-Driven Development) kết hợp Claude Code và đọc tài liệu thiết kế tiếng Nhật (基本設計, 詳細設計, Figma).
+[![npm version](https://img.shields.io/npm/v/@hoanghainh/aspec-kit.svg)](https://www.npmjs.com/package/@hoanghainh/aspec-kit)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Khởi tạo nhanh (Quick Start)
+Official CLI generator to scaffold a new **aspec-kit** project — an Agentic Spec-Driven Development (SDD) framework integrating **Claude Code** with Japanese design specifications intake (**Basic Design 基本設計**, **Detail Design 詳細設計**, and **Figma**).
 
-Chạy một trong các lệnh sau tại terminal:
+---
+
+## Quick Start
+
+Run any of the following commands in your terminal:
 
 ```bash
-# 1. Dùng lệnh init chuẩn
+# 1. Initialize into a new directory
 npx @hoanghainh/aspec-kit init my-project
 
-# 2. Hoặc khởi tạo trực tiếp vào thư mục hiện tại
+# 2. Or initialize directly into the current directory
 npx @hoanghainh/aspec-kit init .
 
-# 3. Hoặc dùng chuẩn npm init / create
+# 3. Or use standard npm init / create syntax
 npm init @hoanghainh/aspec-kit my-project
-# hoặc
+# or
 npm create @hoanghainh/aspec-kit@latest my-project
+# or
+pnpm create @hoanghainh/aspec-kit my-project
 ```
 
-## Cú pháp & Tùy chọn (Usage & Options)
+---
+
+## Usage & Options
 
 ```text
 npx @hoanghainh/aspec-kit init [project-directory] [options]
-# hoặc
+# or
 npx @hoanghainh/aspec-kit [project-directory] [options]
 ```
 
-### Lệnh (Commands)
-- `init [dir]`: Khởi tạo dự án mới (dùng `.` nếu muốn khởi tạo vào chính thư mục hiện tại).
+### Commands
+- `init [dir]`: Scaffolds a new project (pass `.` to initialize in the current directory).
 
-### Tùy chọn (Options)
+### Options & Flags
 
-| Tùy chọn (Flags) | Mô tả | Mặc định |
+| Flag | Description | Default |
 |---|---|:---:|
-| `[project-directory]` | Tên thư mục dự án cần tạo | `my-aspec-app` |
-| `-y, --yes` | Bỏ qua các câu hỏi tương tác, dùng toàn bộ giá trị mặc định | `false` |
-| `--steward <handle>` | Điền sẵn GitHub handle của Lead/Steward vào `.github/CODEOWNERS` | `@your-handle` |
-| `--clean` | Tự động dọn dẹp feature mẫu (`000-example-reservation`) | `true` khi dùng `-y` |
-| `--keep-example` | Giữ lại feature mẫu để tham khảo cấu trúc code & spec | `false` |
-| `-v, --version` | In ra phiên bản hiện tại của CLI | — |
-| `-h, --help` | In ra hướng dẫn sử dụng dòng lệnh | — |
+| `[project-directory]` | Target directory name for the new project | `my-aspec-app` |
+| `-y, --yes` | Skip interactive prompts and accept all defaults | `false` |
+| `--steward <handle>` | Specify GitHub handle of project Steward for `.github/CODEOWNERS` | `@your-handle` |
+| `--clean` | Automatically clean up reference sample feature (`000-example-reservation`) | `true` with `-y` |
+| `--keep-example` | Keep the sample feature to inspect code & spec structure | `false` |
+| `-v, --version` | Output current CLI version | — |
+| `-h, --help` | Display usage guide and options | — |
 
-### Ví dụ sử dụng:
+### Examples
 
 ```bash
-# 1. Chế độ tương tác từng bước (Interactive - khuyên dùng)
-npx @hoanghainh/aspec-kit my-app
+# 1. Interactive onboarding (Recommended)
+npx @hoanghainh/aspec-kit init my-app
 
-# 2. Chế độ tự động hóa hoàn toàn (CI / Non-interactive)
-npx @hoanghainh/aspec-kit my-app --yes
+# 2. Non-interactive automated scaffolding (CI friendly)
+npx @hoanghainh/aspec-kit init my-app --yes
 
-# 3. Chỉ định sẵn Steward và dọn dẹp feature mẫu
-npx @hoanghainh/aspec-kit my-app --steward @hoanghainh1188 --clean
+# 3. Custom Steward handle with automatic cleanup of sample feature
+npx @hoanghainh/aspec-kit init my-app --steward @lead-engineer --clean
 ```
 
 ---
 
-## Các câu hỏi tương tác (Interactive Prompts)
+## Interactive Prompts
 
-Khi chạy không kèm cờ `--yes`, CLI sẽ hỏi bạn 3 câu hỏi cơ bản:
+When run without the `--yes` flag, the CLI guides you through 3 simple setup questions:
 
-1. **`Project directory name`**: Nhập tên thư mục dự án muốn tạo.
-2. **`GitHub handle of project Steward`**: Nhập handle GitHub của người gác cổng (Steward) để tự động cập nhật vào `.github/CODEOWNERS` (ví dụ `@lead-dev`).
-3. **`Keep sample feature for reference?`**: Chọn `y` nếu bạn muốn giữ lại code mẫu đặt chỗ `000-example-reservation` để tham khảo, hoặc `N` để xóa sạch và bắt đầu dự án mới tinh.
+1. **`Project directory name`**: Target directory name (enter `.` to scaffold into the current folder).
+2. **`GitHub handle of project Steward`**: GitHub username of the lead/steward to automatically configure in `.github/CODEOWNERS` (e.g., `@lead-dev`).
+3. **`Keep sample feature for reference?`**: Choose `y` to keep the reference reservation feature (`000-example-reservation`), or `N` to start with a completely clean workspace.
 
 ---
 
-## Cấu trúc dự án được tạo ra
+## Generated Project Layout
 
 ```text
 my-project/
-├── CLAUDE.md                       Quy ước dự án cho Claude Code
-├── bootstrap.sh                    Script setup Spec Kit + agents/skills
+├── CLAUDE.md                       Core conventions read by AI agents first
+├── bootstrap.sh                    Script to initialize Spec Kit CLI and hooks
 ├── .claude/
-│   ├── settings.json              Permission deny/ask/allow
-│   ├── agents/                    4 subagent (design-intake, code-reviewer, security-reviewer, glossary-steward)
+│   ├── settings.json              Permission boundaries (deny -> ask -> allow)
+│   ├── agents/                    4 subagents (design-intake, code-reviewer, security-reviewer, glossary-steward)
 │   ├── hooks/                     Format-on-save hook
-│   └── commands/                  Command /design-to-code
+│   └── commands/                  Hybrid orchestration command /design-to-code
 ├── docs/
-│   ├── 00-glossary.md              Thuật ngữ nghiệp vụ Nhật-Việt-Anh
-│   ├── 01-basic-design/            基本設計 gốc từ khách hàng
-│   ├── 02-detail-design/           詳細設計 gốc
-│   ├── 03-ui/                      Figma link + snapshots
-│   ├── 04-decisions/               Câu trả lời ambiguity (INDEX.md)
-│   ├── 05-lessons.md               Bài học/gotcha kỹ thuật khi code
-│   └── CONSTITUTION_APPEND.md      Điều lệ gợi ý cho bối cảnh Nhật
-├── src/                            Mã nguồn ứng dụng
-└── tests/                          Kiểm thử tự động
+│   ├── 00-glossary.md              Single source of truth for JP / VI / EN business terms
+│   ├── 01-basic-design/            基本設計 directly from client (read-only)
+│   ├── 02-detail-design/           詳細設計 directly from client (read-only)
+│   ├── 03-ui/                      Figma links and visual snapshots
+│   ├── 04-decisions/               Decisions from /speckit-clarify (INDEX.md)
+│   ├── 05-lessons.md               Technical gotchas and project lessons
+│   └── CONSTITUTION_APPEND.md      Recommended constitution articles for JP projects
+├── src/                            Application source code (src/features/<slug>/)
+└── tests/                          Automated test suites
 ```
 
 ---
 
-## Các bước tiếp theo sau khi tạo dự án
+## Next Steps
 
 ```bash
-# 1. Di chuyển vào thư mục dự án
+# 1. Navigate to the project directory
 cd my-project
 
-# 2. Hoàn tất setup Spec Kit và các skill /speckit-*
+# 2. Complete Spec Kit CLI & skills setup
 bash bootstrap.sh
 
-# 3. Khởi động Claude Code và chạy Hiến pháp dự án
+# 3. Launch Claude Code and initialize project constitution
 claude
-# Trong Claude Code gõ:
+# Inside Claude Code:
 /speckit-constitution
 ```
+
+---
+
+## Repository & License
+
+- **GitHub Repository**: [hoanghainh1188/aspec-kit](https://github.com/hoanghainh1188/aspec-kit)
+- **License**: Released under the [MIT License](https://opensource.org/licenses/MIT).
