@@ -65,9 +65,55 @@ async function fetchTemplate(targetDir) {
 }
 
 export async function main() {
+  const args = process.argv.slice(2);
+  const pkgPath = new URL("../package.json", import.meta.url);
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+
+  // Handle help flag
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log(`
+Usage: npx @hoanghainh1188/aspec-kit [project-directory] [options]
+
+Options:
+  -v, --version        Display CLI version
+  -h, --help           Display this help message
+  -y, --yes            Use default settings without interactive prompts
+  --steward <handle>   Specify GitHub handle for .github/CODEOWNERS
+  --keep-example       Keep sample feature (000-example-reservation)
+  --clean              Clean up sample feature
+
+Examples:
+  npx @hoanghainh1188/aspec-kit my-app
+  npx @hoanghainh1188/aspec-kit my-app --yes
+  npx @hoanghainh1188/aspec-kit my-app --steward @lead-engineer --clean
+`);
+    return;
+  }
+
+  // Handle version flag
+  if (args.includes("--version") || args.includes("-v")) {
+    console.log(pkg.version);
+    return;
+  }
+
   console.log("\n=======================================================");
-  console.log("🚀  aspec-kit — Spec-Driven Project Generator");
+  console.log(`🚀  aspec-kit v${pkg.version} — Spec-Driven Project Generator`);
   console.log("=======================================================\n");
+
+  const isYes = args.includes("--yes") || args.includes("-y");
+  const stewardArgIndex = args.indexOf("--steward");
+  const stewardArg = stewardArgIndex !== -1 ? args[stewardArgIndex + 1] : null;
+  const keepExampleArg = args.includes("--keep-example")
+    ? "y"
+    : args.includes("--clean")
+      ? "n"
+      : null;
+
+  // Filter out flag options to find target directory name
+  const positionalArgs = args.filter(
+    (arg, i) =>
+      !arg.startsWith("-") && (stewardArgIndex === -1 || i !== stewardArgIndex + 1)
+  );
 
   const rl = readline.createInterface({
     input: process.stdin,
@@ -76,12 +122,19 @@ export async function main() {
 
   try {
     // 1. Get project directory
-    const argTarget = process.argv[2];
+    const argTarget = positionalArgs[0];
     const projectName =
-      argTarget || (await promptUser(rl, "Project directory name", "my-aspec-app"));
+      argTarget ||
+      (isYes
+        ? "my-aspec-app"
+        : await promptUser(rl, "Project directory name", "my-aspec-app"));
     const targetDir = path.resolve(process.cwd(), projectName);
 
     if (fs.existsSync(targetDir) && fs.readdirSync(targetDir).length > 0) {
+      if (isYes) {
+        console.error(`Error: Directory "${projectName}" already exists and is not empty.`);
+        process.exit(1);
+      }
       const overwrite = await promptUser(
         rl,
         `Directory "${projectName}" already exists and is not empty. Continue? (y/N)`,
@@ -95,18 +148,26 @@ export async function main() {
     }
 
     // 2. Steward handle
-    const stewardHandle = await promptUser(
-      rl,
-      "GitHub handle of project Steward (for .github/CODEOWNERS)",
-      "@your-handle"
-    );
+    const stewardHandle =
+      stewardArg ||
+      (isYes
+        ? "@your-handle"
+        : await promptUser(
+            rl,
+            "GitHub handle of project Steward (for .github/CODEOWNERS)",
+            "@your-handle"
+          ));
 
     // 3. Keep sample feature
-    const keepExample = await promptUser(
-      rl,
-      "Keep sample feature (000-example-reservation) for reference? (y/N)",
-      "N"
-    );
+    const keepExample =
+      keepExampleArg ||
+      (isYes
+        ? "n"
+        : await promptUser(
+            rl,
+            "Keep sample feature (000-example-reservation) for reference? (y/N)",
+            "N"
+          ));
 
     rl.close();
 

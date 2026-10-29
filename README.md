@@ -18,7 +18,7 @@ npx @hoanghainh1188/aspec-kit my-project
 npm create @hoanghainh1188/aspec-kit@latest my-project
 ```
 
-CLI sẽ tự động tải template mới nhất, hỏi cấu hình Steward CODEOWNERS, và tùy chọn dọn dẹp feature mẫu giúp bạn. Sau đó chỉ cần:
+CLI sẽ tự động tải template mới nhất, hỏi cấu hình Steward CODEOWNERS, và tùy chọn dọn dẹp feature mẫu giúp bạn (hỗ trợ cờ `-y/--yes`, `--steward <handle>`, `--clean`, `--help` — xem chi tiết tại [`packages/aspec-kit/README.md`](packages/aspec-kit/README.md)). Sau đó chỉ cần:
 ```bash
 cd my-project
 bash bootstrap.sh
