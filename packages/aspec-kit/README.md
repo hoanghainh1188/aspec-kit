@@ -7,20 +7,30 @@ CLI generator chính thức để khởi tạo dự án với **aspec-kit** — 
 Chạy một trong các lệnh sau tại terminal:
 
 ```bash
-npx @hoanghainh/aspec-kit my-project
+# 1. Dùng lệnh init chuẩn
+npx @hoanghainh/aspec-kit init my-project
+
+# 2. Hoặc khởi tạo trực tiếp vào thư mục hiện tại
+npx @hoanghainh/aspec-kit init .
+
+# 3. Hoặc dùng chuẩn npm init / create
+npm init @hoanghainh/aspec-kit my-project
 # hoặc
 npm create @hoanghainh/aspec-kit@latest my-project
-# hoặc
-pnpm create @hoanghainh/aspec-kit my-project
-# hoặc
-yarn create @hoanghainh/aspec-kit my-project
 ```
 
 ## Cú pháp & Tùy chọn (Usage & Options)
 
 ```text
+npx @hoanghainh/aspec-kit init [project-directory] [options]
+# hoặc
 npx @hoanghainh/aspec-kit [project-directory] [options]
 ```
+
+### Lệnh (Commands)
+- `init [dir]`: Khởi tạo dự án mới (dùng `.` nếu muốn khởi tạo vào chính thư mục hiện tại).
+
+### Tùy chọn (Options)
 
 | Tùy chọn (Flags) | Mô tả | Mặc định |
 |---|---|:---:|

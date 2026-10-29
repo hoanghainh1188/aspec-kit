@@ -27,9 +27,12 @@ Production-ready greenfield project template and toolkit for **Claude Code**, sp
 ### Method 1: Instant Start via npm CLI (Recommended — Fastest, Zero-Config)
 
 ```bash
-npx @hoanghainh/aspec-kit my-project
-# or
-npm create @hoanghainh/aspec-kit@latest my-project
+# Initialize into a new directory
+npx @hoanghainh/aspec-kit init my-project
+# or initialize directly into current directory
+npx @hoanghainh/aspec-kit init .
+# or standard npm init / create
+npm init @hoanghainh/aspec-kit my-project
 ```
 
 The CLI automatically fetches the latest template, interactively configures `.github/CODEOWNERS` with your Steward handle, and optionally cleans up the reference sample feature.

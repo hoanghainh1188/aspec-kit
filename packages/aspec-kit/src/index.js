@@ -1,6 +1,7 @@
 // Implementation of aspec-kit CLI generator using native Node.js
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import readline from "node:readline/promises";
 import { execSync } from "node:child_process";
 import https from "node:https";
@@ -41,51 +42,52 @@ async function promptUser(rl, question, defaultValue) {
   return answer.trim() || defaultValue;
 }
 
-// Download and unpack via git or fallback to GitHub tarball
+// Fetch template to temporary directory and copy to targetDir
 async function fetchTemplate(targetDir) {
   fs.mkdirSync(targetDir, { recursive: true });
 
-  // Strategy 1: Git clone (fastest and most reliable if git is installed)
+  const tempCloneDir = fs.mkdtempSync(path.join(os.tmpdir(), "aspec-kit-"));
   try {
-    console.log("==> Fetching template via git clone...");
-    execSync(`git clone --depth 1 "${GITHUB_REPO_URL}" "${targetDir}"`, {
-      stdio: "pipe",
-    });
-    // Remove original .git history
-    fs.rmSync(path.join(targetDir, ".git"), { recursive: true, force: true });
-    // Remove internal packages folder (CLI generator itself)
-    fs.rmSync(path.join(targetDir, "packages"), { recursive: true, force: true });
-    return;
-  } catch {
-    console.log("==> Git clone failed or git not available, falling back to tarball download...");
-  }
-
-  // Strategy 2: Download tarball and extract
-  const tempTarPath = path.join(targetDir, "template.tar.gz");
-  await new Promise((resolve, reject) => {
-    https.get(TARBALL_URL, (res) => {
-      if (res.statusCode !== 200) {
-        return reject(
-          new Error(`Failed to download template archive: HTTP ${res.statusCode}`)
-        );
-      }
-      const fileStream = fs.createWriteStream(tempTarPath);
-      res.pipe(fileStream);
-      fileStream.on("finish", () => {
-        fileStream.close();
-        resolve();
+    try {
+      console.log("==> Fetching template via git clone...");
+      execSync(`git clone --depth 1 "${GITHUB_REPO_URL}" "${tempCloneDir}"`, {
+        stdio: "pipe",
       });
-      fileStream.on("error", reject);
-    }).on("error", reject);
-  });
+    } catch {
+      console.log("==> Git clone failed, falling back to tarball download...");
+      const tempTarPath = path.join(tempCloneDir, "template.tar.gz");
+      await new Promise((resolve, reject) => {
+        https.get(TARBALL_URL, (res) => {
+          if (res.statusCode !== 200) {
+            return reject(
+              new Error(`Failed to download template archive: HTTP ${res.statusCode}`)
+            );
+          }
+          const fileStream = fs.createWriteStream(tempTarPath);
+          res.pipe(fileStream);
+          fileStream.on("finish", () => {
+            fileStream.close();
+            resolve();
+          });
+          fileStream.on("error", reject);
+        }).on("error", reject);
+      });
+      execSync(`tar -xzf "${tempTarPath}" --strip-components=1 -C "${tempCloneDir}"`, {
+        stdio: "inherit",
+      });
+      fs.unlinkSync(tempTarPath);
+    }
 
-  console.log("==> Extracting template archive...");
-  execSync(`tar -xzf "${tempTarPath}" --strip-components=1 -C "${targetDir}"`, {
-    stdio: "inherit",
-  });
+    // Clean internal items before copying
+    fs.rmSync(path.join(tempCloneDir, ".git"), { recursive: true, force: true });
+    fs.rmSync(path.join(tempCloneDir, "packages"), { recursive: true, force: true });
 
-  fs.unlinkSync(tempTarPath);
-  fs.rmSync(path.join(targetDir, "packages"), { recursive: true, force: true });
+    // Copy template files to targetDir (supports copying into '.' as well)
+    console.log("==> Scaffolding project files...");
+    fs.cpSync(tempCloneDir, targetDir, { recursive: true });
+  } finally {
+    fs.rmSync(tempCloneDir, { recursive: true, force: true });
+  }
 }
 
 export async function main() {
@@ -96,7 +98,13 @@ export async function main() {
   // Handle help flag
   if (args.includes("--help") || args.includes("-h")) {
     printBanner(pkg.version);
-    console.log(`Usage: npx @hoanghainh/aspec-kit [project-directory] [options]
+    console.log(`Usage:
+  npx @hoanghainh/aspec-kit init [project-directory] [options]
+  npx @hoanghainh/aspec-kit [project-directory] [options]
+  npm init @hoanghainh/aspec-kit [project-directory] [options]
+
+Commands:
+  init [dir]           Initialize a new aspec-kit project (use '.' for current dir)
 
 Options:
   -v, --version        Display CLI version
@@ -107,8 +115,9 @@ Options:
   --clean              Clean up sample feature
 
 Examples:
-  npx @hoanghainh/aspec-kit my-app
-  npx @hoanghainh/aspec-kit my-app --yes
+  npx @hoanghainh/aspec-kit init my-app
+  npx @hoanghainh/aspec-kit init .
+  npm init @hoanghainh/aspec-kit my-app
   npx @hoanghainh/aspec-kit my-app --steward @lead-engineer --clean
 `);
     return;
@@ -132,10 +141,15 @@ Examples:
       : null;
 
   // Filter out flag options to find target directory name
-  const positionalArgs = args.filter(
+  let positionalArgs = args.filter(
     (arg, i) =>
       !arg.startsWith("-") && (stewardArgIndex === -1 || i !== stewardArgIndex + 1)
   );
+
+  // If first positional argument is 'init', treat it as subcommand
+  if (positionalArgs[0] === "init") {
+    positionalArgs.shift();
+  }
 
   const rl = readline.createInterface({
     input: process.stdin,
@@ -149,7 +163,7 @@ Examples:
       argTarget ||
       (isYes
         ? "my-aspec-app"
-        : await promptUser(rl, "Project directory name", "my-aspec-app"));
+        : await promptUser(rl, "Project directory name (or '.' for current directory)", "my-aspec-app"));
     const targetDir = path.resolve(process.cwd(), projectName);
 
     if (fs.existsSync(targetDir) && fs.readdirSync(targetDir).length > 0) {
@@ -157,9 +171,10 @@ Examples:
         console.error(`Error: Directory "${projectName}" already exists and is not empty.`);
         process.exit(1);
       }
+      const dirDisplayName = projectName === "." ? "Current directory" : `Directory "${projectName}"`;
       const overwrite = await promptUser(
         rl,
-        `Directory "${projectName}" already exists and is not empty. Continue? (y/N)`,
+        `${dirDisplayName} is not empty. Continue? (y/N)`,
         "N"
       );
       if (overwrite.toLowerCase() !== "y") {
@@ -254,22 +269,29 @@ Examples:
       console.log("✓ Sample feature cleaned up");
     }
 
-    // 6. Initialize git repo
+    // 6. Initialize git repo if not already a git repository
     try {
-      execSync("git init", { cwd: targetDir, stdio: "ignore" });
-      console.log("✓ Initialized fresh git repository");
+      if (!fs.existsSync(path.join(targetDir, ".git"))) {
+        execSync("git init", { cwd: targetDir, stdio: "ignore" });
+        console.log("✓ Initialized fresh git repository");
+      }
     } catch {
       // Git not installed, ignore
     }
 
     // 7. Output completion banner
     console.log(`\n=======================================================`);
-    console.log(`🎉  Project created successfully in ${targetDir}!`);
+    console.log(`🎉  Project ready in ${targetDir}!`);
     console.log(`=======================================================\n`);
     console.log("Next steps:");
-    console.log(`  1. cd ${projectName}`);
-    console.log("  2. bash bootstrap.sh    # Setup Spec Kit CLI and hooks");
-    console.log("  3. claude               # Launch Claude Code and run /speckit-constitution\n");
+    if (projectName !== ".") {
+      console.log(`  1. cd ${projectName}`);
+      console.log("  2. bash bootstrap.sh    # Setup Spec Kit CLI and hooks");
+      console.log("  3. claude               # Launch Claude Code and run /speckit-constitution\n");
+    } else {
+      console.log("  1. bash bootstrap.sh    # Setup Spec Kit CLI and hooks");
+      console.log("  2. claude               # Launch Claude Code and run /speckit-constitution\n");
+    }
   } catch (err) {
     rl.close();
     throw err;
