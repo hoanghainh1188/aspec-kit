@@ -8,9 +8,23 @@ Tích hợp:
 - **Glossary Nhật-Việt-Anh** làm nguồn thuật ngữ chung
 - **Permission gate** cấu hình sẵn theo nguyên tắc deny → ask → allow
 
-## Có 2 cách dùng template này
+## Có 3 cách dùng aspec-kit
 
-### Cách 1: Dùng như GitHub template repo (khuyến nghị cho hầu hết trường hợp)
+### Cách 1: Khởi tạo nhanh qua CLI npm (khuyến nghị — nhanh nhất, zero-config)
+
+```bash
+npx @hoanghainh1188/aspec-kit my-project
+# hoặc
+npm create @hoanghainh1188/aspec-kit@latest my-project
+```
+
+CLI sẽ tự động tải template mới nhất, hỏi cấu hình Steward CODEOWNERS, và tùy chọn dọn dẹp feature mẫu giúp bạn. Sau đó chỉ cần:
+```bash
+cd my-project
+bash bootstrap.sh
+```
+
+### Cách 2: Dùng như GitHub template repo
 
 1. Fork/clone repo này lên GitHub tài khoản của bạn.
 2. Vào Settings → chọn "Template repository" để biến nó thành template.
@@ -18,7 +32,7 @@ Tích hợp:
 4. `git clone` repo mới về máy, chạy `bash bootstrap.sh` để hoàn tất setup (chạy `specify init` để tạo `.specify/` và các skill Spec Kit `/speckit-*` trong `.claude/skills/`).
 5. Chạy `/speckit-constitution` trong Claude Code — sau đó xem `docs/CONSTITUTION_APPEND.md` để bổ sung các article cho bối cảnh Nhật.
 
-### Cách 2: Cài đặt như Claude Code plugin
+### Cách 3: Cài đặt như Claude Code plugin (cho nhiều dự án đã có sẵn)
 
 Cách này phù hợp khi bạn muốn dùng bộ agent + command cho **nhiều dự án đã có sẵn**, không phải chỉ dự án mới.
 
@@ -30,7 +44,7 @@ Cách này phù hợp khi bạn muốn dùng bộ agent + command cho **nhiều 
 
 Plugin sẽ cài 4 agent (`design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`) và command `/design-to-code` vào user scope (`~/.claude/`). Xem chi tiết ở `plugin/README.md`.
 
-**Lưu ý**: cách plugin không tự tạo cấu trúc `docs/` hay chạy `specify init` — bạn cần làm những bước đó thủ công nếu dự án chưa có sẵn. Cách 1 (template repo) tự động hóa cả 2.
+**Lưu ý**: cách plugin không tự tạo cấu trúc `docs/` hay chạy `specify init` — bạn cần làm những bước đó thủ công nếu dự án chưa có sẵn. Cách 1 (CLI) và Cách 2 (template repo) tự động hóa cả 2.
 
 ## Cấu trúc dự án được sinh ra
 
