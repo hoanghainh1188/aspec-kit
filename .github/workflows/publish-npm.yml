@@ -20,11 +20,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Sync package.json version with git tag
         run: |
-          # Extract version number by stripping the leading 'v' (e.g. v0.1.0 -> 0.1.0)
+          # Extract version number by stripping the leading 'v' (e.g. v0.1.1 -> 0.1.1)
           TAG_VERSION=${GITHUB_REF_NAME#v}
           echo "Setting package.json version to: $TAG_VERSION"
           npm version "$TAG_VERSION" --no-git-tag-version --prefix packages/aspec-kit
@@ -35,12 +34,10 @@ jobs:
           bash -n bootstrap.sh
           bash -n .claude/hooks/format.sh
 
-      - name: Publish to npmjs.com
+      - name: Publish to npmjs.com via OIDC Trusted Publisher
         run: |
           cd packages/aspec-kit
           npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
