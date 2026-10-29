@@ -1,4 +1,4 @@
-// Implementation of create-aspec-kit CLI generator using native Node.js
+// Implementation of aspec-kit CLI generator using native Node.js
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
@@ -7,6 +7,30 @@ import https from "node:https";
 
 const GITHUB_REPO_URL = "https://github.com/hoanghainh1188/aspec-kit.git";
 const TARBALL_URL = "https://codeload.github.com/hoanghainh1188/aspec-kit/tar.gz/refs/heads/main";
+
+// Color helpers
+const isColorSupported =
+  !process.env.NO_COLOR &&
+  (process.stdout.isTTY || process.env.FORCE_COLOR !== undefined);
+
+const CYAN = isColorSupported ? "\x1b[36m" : "";
+const BOLD = isColorSupported ? "\x1b[1m" : "";
+const DIM = isColorSupported ? "\x1b[2m" : "";
+const RESET = isColorSupported ? "\x1b[0m" : "";
+
+const ASCII_LOGO = String.raw`
+    ___   _____ ____  ______ ______        __ __ ____ ______
+   /   | / ___// __ \/ ____// ____/       / //_//  _//_  __/
+  / /| | \__ \/ /_/ / __/  / /   ______  / ,<   / /   / /   
+ / ___ |___/ / ____/ /___ / /___/_____/ / /| |_/ /   / /    
+/_/  |_/____/_/   /_____/ \____/       /_/ |_/___/  /_/     
+`;
+
+function printBanner(version) {
+  console.log(CYAN + BOLD + ASCII_LOGO + RESET);
+  console.log(DIM + "   Spec-Driven Development for Claude Code & Japanese Design Docs" + RESET);
+  console.log(DIM + `   Version: v${version}\n` + RESET);
+}
 
 // Helper for interactive prompt
 async function promptUser(rl, question, defaultValue) {
@@ -71,8 +95,8 @@ export async function main() {
 
   // Handle help flag
   if (args.includes("--help") || args.includes("-h")) {
-    console.log(`
-Usage: npx @hoanghainh1188/aspec-kit [project-directory] [options]
+    printBanner(pkg.version);
+    console.log(`Usage: npx @hoanghainh1188/aspec-kit [project-directory] [options]
 
 Options:
   -v, --version        Display CLI version
@@ -96,9 +120,7 @@ Examples:
     return;
   }
 
-  console.log("\n=======================================================");
-  console.log(`🚀  aspec-kit v${pkg.version} — Spec-Driven Project Generator`);
-  console.log("=======================================================\n");
+  printBanner(pkg.version);
 
   const isYes = args.includes("--yes") || args.includes("-y");
   const stewardArgIndex = args.indexOf("--steward");
