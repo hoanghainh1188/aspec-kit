@@ -5,7 +5,7 @@
   },
   "plugins": [
     {
-      "name": "spec-driven-jp",
+      "name": "aspec-kit",
       "source": ".",
       "description": "Hybrid pipeline for spec-driven development from Japanese design docs (基本設計/詳細設計) + Figma. Wraps GitHub Spec Kit with design-intake, code-reviewer, security-reviewer, and glossary-steward agents.",
       "commands": [

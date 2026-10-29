@@ -1,4 +1,4 @@
-# Đóng góp cho spec-driven-jp
+# Đóng góp cho aspec-kit
 
 Xin chào! Bất cứ ai muốn cải thiện template này đều rất được hoan nghênh.
 
@@ -16,8 +16,9 @@ Xin chào! Bất cứ ai muốn cải thiện template này đều rất đượ
 ## Cấu trúc thư mục
 
 - `.claude/` — bộ agent + command dùng chung
+- `.claude-plugin/` — metadata và catalog cho chế độ Claude Code plugin
 - `docs/` — templates cho tài liệu Nhật
-- `plugin/` — metadata cho chế độ Claude Code plugin
+- `plugin/` — hướng dẫn sử dụng chế độ Claude Code plugin
 - `bootstrap.sh` — chạy specify init sau khi clone
 
 ## Test tại chỗ
@@ -26,6 +27,9 @@ Trước khi mở PR, chạy smoke test tương đương CI:
 
 ```bash
 bash -n bootstrap.sh
+bash -n .claude/hooks/format.sh
+python3 .github/scripts/check-template.py
 python3 -c "import json; json.load(open('.claude/settings.json'))"
-python3 -c "import json; json.load(open('plugin/plugin.json'))"
+python3 -c "import json; json.load(open('.claude-plugin/plugin.json'))"
+python3 -c "import json; json.load(open('.claude-plugin/marketplace.json'))"
 ```

@@ -1,4 +1,4 @@
-# spec-driven-jp — Chế độ Claude Code Plugin
+# aspec-kit — Chế độ Claude Code Plugin
 
 Chế độ này chỉ cài **4 subagent + 1 command** vào Claude Code của bạn, KHÔNG tạo cấu trúc thư mục `docs/`, không chạy `specify init`. Phù hợp khi bạn muốn dùng bộ agent cho **nhiều dự án có sẵn**.
 
@@ -6,11 +6,11 @@ Chế độ này chỉ cài **4 subagent + 1 command** vào Claude Code của b�
 
 ```
 # Trong Claude Code
-/plugin marketplace add hoanghainh1188/spec-driven-jp
-/plugin install spec-driven-jp@hoanghainh1188
+/plugin marketplace add hoanghainh1188/aspec-kit
+/plugin install aspec-kit@hoanghainh1188
 ```
 
-> `spec-driven-jp` là tên plugin, `hoanghainh1188` là tên marketplace (khai báo trong
+> `aspec-kit` là tên plugin, `hoanghainh1188` là tên marketplace (khai báo trong
 > `.claude-plugin/marketplace.json`). Cú pháp `<plugin>@<marketplace>` là bắt buộc.
 
 Sau khi cài, các agent + command của plugin sẽ khả dụng ngay trong Claude Code:
@@ -49,5 +49,5 @@ Nếu bạn muốn tất cả những thứ trên được tạo tự động, h
 ## Gỡ cài đặt
 
 ```
-/plugin uninstall spec-driven-jp@hoanghainh1188
+/plugin uninstall aspec-kit@hoanghainh1188
 ```

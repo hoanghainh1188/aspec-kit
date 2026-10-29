@@ -1,4 +1,4 @@
-# spec-driven-jp — Template dự án tích hợp Spec Kit + đọc tài liệu thiết kế tiếng Nhật
+# aspec-kit — Template dự án tích hợp Spec Kit + đọc tài liệu thiết kế tiếng Nhật
 
 Template cho các dự án greenfield dùng Claude Code, đặc biệt phù hợp với bối cảnh **BrSE làm việc với khách hàng Nhật**: có tài liệu basic design (基本設計), detail design (詳細設計), và Figma làm nguồn thiết kế đầu vào.
 
@@ -24,8 +24,8 @@ Cách này phù hợp khi bạn muốn dùng bộ agent + command cho **nhiều 
 
 ```bash
 # Trong Claude Code
-/plugin marketplace add hoanghainh1188/spec-driven-jp
-/plugin install spec-driven-jp@hoanghainh1188
+/plugin marketplace add hoanghainh1188/aspec-kit
+/plugin install aspec-kit@hoanghainh1188
 ```
 
 Plugin sẽ cài 4 agent (`design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`) và command `/design-to-code` vào user scope (`~/.claude/`). Xem chi tiết ở `plugin/README.md`.
@@ -60,8 +60,10 @@ Plugin sẽ cài 4 agent (`design-intake`, `code-reviewer`, `security-reviewer`,
 │   └── CONSTITUTION_APPEND.md      Gợi ý các article cho bối cảnh Nhật
 ├── src/
 ├── tests/
-└── plugin/                         Metadata để dùng như Claude Code plugin
-    ├── plugin.json
+├── .claude-plugin/                 Metadata và catalog cho Claude Code plugin
+│   ├── marketplace.json
+│   └── plugin.json
+└── plugin/                         Hướng dẫn sử dụng chế độ plugin
     └── README.md
 ```
 
