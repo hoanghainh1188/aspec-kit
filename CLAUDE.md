@@ -35,6 +35,11 @@ giúp mọi agent nhất quán ngay từ lượt gọi đầu tiên>
 
 - **`docs/intake/`** — output của subagent `design-intake`. Đây là cầu nối giữa tài liệu Nhật/Figma và Spec Kit.
 
+- **`docs/changes/`** — báo cáo tác động 仕様変更 do `/design-change <bản-cũ> <bản-mới>` sinh (subagent
+  `impact-analyzer`, read-only): thay đổi nào của khách → AC / task / file / test nào phải sửa (kèm lý do),
+  lệnh Spec Kit cần chạy lại, và tóm tắt 影響範囲 tiếng Nhật gửi khách. Chạy mỗi khi `docs/01-03` có
+  version mới, TRƯỚC khi re-run pipeline.
+
 - **`docs/qa/`** — 質問票 (bảng hỏi khách) do `/qa-sheet` sinh từ mục *Ambiguities* của intake:
   `<NNN>-<slug>.md` (nguồn, 敬語) + `.csv` (UTF-8 BOM cho Excel, script sinh — không sửa tay). ID câu hỏi
   `Q-<NNN>-<ii>` ổn định, không đánh lại số. Khách trả lời → `/qa-sheet --ingest <file>` ghi vào
@@ -89,6 +94,10 @@ Gõ `/design-to-code` trong Claude Code, cung cấp đường dẫn tài liệu 
 Trình tự: **nạp memory** → design-intake → specify → clarify → plan → tasks → analyze →
 implement → code-reviewer → glossary-steward → security-reviewer → **test gate** → **deploy**.
 Dừng xin xác nhận ở mọi checkpoint.
+
+**Khi khách gửi bản design mới (仕様変更):** thêm file version mới + `CHANGELOG.md` trong `docs/01-03`,
+rồi gõ `/design-change <bản-cũ> <bản-mới>` → báo cáo `docs/changes/<date>-<slug>.md`. Sau đó sửa qua
+`/design-to-code` theo mục "Đề xuất chạy lại" của báo cáo.
 
 ## Deploy
 <Điền phương thức deploy cụ thể của dự án — `/design-to-code` bước 15 sẽ đọc mục này.

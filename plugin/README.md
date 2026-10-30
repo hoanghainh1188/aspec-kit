@@ -1,6 +1,6 @@
 # aspec-kit — Chế độ Claude Code Plugin
 
-Chế độ này chỉ cài **4 subagent + 1 command** vào Claude Code của bạn, KHÔNG tạo cấu trúc thư mục `docs/`, không chạy `specify init`. Phù hợp khi bạn muốn dùng bộ agent cho **nhiều dự án có sẵn**.
+Chế độ này chỉ cài **5 subagent + 2 command** vào Claude Code của bạn, KHÔNG tạo cấu trúc thư mục `docs/`, không chạy `specify init`. Phù hợp khi bạn muốn dùng bộ agent cho **nhiều dự án có sẵn**.
 
 ## Cài đặt
 
@@ -14,8 +14,8 @@ Chế độ này chỉ cài **4 subagent + 1 command** vào Claude Code của b�
 > `.claude-plugin/marketplace.json`). Cú pháp `<plugin>@<marketplace>` là bắt buộc.
 
 Sau khi cài, các agent + command của plugin sẽ khả dụng ngay trong Claude Code:
-- 4 subagent: `design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`
-- 2 command: `/design-to-code`, `/qa-sheet`
+- 5 subagent: `design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`, `impact-analyzer`
+- 3 command: `/design-to-code`, `/design-change` (phân tích tác động 仕様変更), `/qa-sheet` (質問票)
 
 > `/qa-sheet` cần script `.claude/scripts/qa_sheet.py` trong repo dự án (plugin không cài script) —
 > copy file đó từ repo aspec-kit vào dự án trước khi dùng.
