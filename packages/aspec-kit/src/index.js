@@ -6,6 +6,7 @@ import readline from "node:readline/promises";
 import { execFileSync } from "node:child_process";
 import https from "node:https";
 import { parseArgs } from "node:util";
+import { doctorCommand } from "./commands/doctor.js";
 
 const GITHUB_OWNER_REPO = "hoanghainh1188/aspec-kit";
 const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER_REPO}.git`;
@@ -77,6 +78,7 @@ const HELP_TEXT = `Usage:
 
 Commands:
   init [dir]             Initialize a new aspec-kit project (use '.' for current dir)
+  doctor [dir] [--json]  Check environment & guardrails of a project (exit 1 on failure)
 
 Options:
   -v, --version          Display CLI version
@@ -95,6 +97,7 @@ Examples:
   npx @hoanghainh/aspec-kit init .
   npm init @hoanghainh/aspec-kit my-app
   npx @hoanghainh/aspec-kit my-app --steward @lead-engineer --clean
+  npx @hoanghainh/aspec-kit doctor --json
 `;
 
 export class CliError extends Error {
@@ -465,6 +468,10 @@ function printFileList(title, files, limit = 15) {
 export async function main(argv = process.argv.slice(2)) {
   const pkgPath = new URL("../package.json", import.meta.url);
   const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+  if (argv[0] === "doctor") {
+    process.exitCode = doctorCommand(argv.slice(1));
+    return;
+  }
   const opts = parseCliArgs(argv);
 
   if (opts.help) {
