@@ -10,7 +10,9 @@ Agent KHÔNG BAO GIỜ sửa nội dung ở đây.
 
 `Read` KHÔNG parse được `.docx/.xlsx/.pdf` nhị phân. Cho mỗi feature, đảm bảo **một trong hai**:
 - Skill `docx/xlsx/pdf` đã cài, HOẶC
-- Đặt sẵn **bản export text/markdown** cạnh file gốc (VD `basic-design-v1.md`).
+- Đặt sẵn **bản export text/markdown** cạnh file gốc (VD `basic-design-v1.md`). Với `.xlsx`/`.pdf`
+  dùng converter `uv run --script .claude/scripts/convert-design.py <file> --out <thư mục chứa file>`
+  (xem [`02-detail-design/README.md`](../02-detail-design/README.md)).
 
 Layout gợi ý:
 

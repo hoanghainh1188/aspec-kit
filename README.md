@@ -177,7 +177,12 @@ p.write_text('\n'.join(lines) + '\n')
    - `docs/01-basic-design/<slug>/` — 基本設計 (user stories & high-level behavior).
    - `docs/02-detail-design/<slug>/` — 詳細設計 (field tables, validation rules, business edges, errors).
    - `docs/03-ui/<slug>/figma-links.md` — Figma nodes and reference screenshots.
-   *(Note: For binary `.docx/.xlsx/.pdf` files, export text/markdown copies alongside the originals for direct tool parsing).*
+   *(Note: Claude's `Read` cannot parse binary Office/PDF files. Convert 詳細設計 workbooks/PDFs with
+   `npx @hoanghainh/aspec-kit convert docs/02-detail-design/<slug>/<file>.xlsx` (or
+   `uv run --script .claude/scripts/convert-design.py <file>` inside a scaffolded project): it writes one
+   Markdown file per sheet next to the untouched original, expands merged cells, keeps field/validation
+   tables as GFM tables and appends an entry to `CHANGELOG.md`. Requires [uv](https://docs.astral.sh/uv/).
+   For `.docx`, export a text/markdown copy alongside the original.)*
 3. **Execute `/design-to-code`** in Claude Code, providing document paths when prompted.
 4. Claude runs each Spec Kit step (`speckit-specify|clarify|plan|tasks|analyze|implement`) itself via the **Skill tool** and pauses for you to review the artifact. Answer `clarify` questions in chat. Only if a skill is missing or blocked does it fall back to **[HANDOFF]**: copy and run the `/speckit-*` command it prints. See [`docs/04-decisions/2026-10-31-runbook-auto-invoke-speckit.md`](docs/04-decisions/2026-10-31-runbook-auto-invoke-speckit.md).
 5. Review checkpoints at every **[PAUSE]** (intake review, analyze gate, test gate, deployment).

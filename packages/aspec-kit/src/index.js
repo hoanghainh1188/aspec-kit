@@ -8,6 +8,7 @@ import https from "node:https";
 import { parseArgs } from "node:util";
 import { MANIFEST_FILE, buildManifest, hashProjectFiles, readManifest, writeManifest } from "./manifest.js";
 import { doctorCommand } from "./commands/doctor.js";
+import { runConvert } from "./commands/convert.js";
 
 const GITHUB_OWNER_REPO = "hoanghainh1188/aspec-kit";
 const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER_REPO}.git`;
@@ -87,6 +88,7 @@ Commands:
   update [dir]           Upgrade kit-owned template files of an existing project
                          (run 'aspec-kit update --help' for details)
   doctor [dir] [--json]  Check environment & guardrails of a project (exit 1 on failure)
+  convert <file>         Convert a 詳細設計 .xlsx/.pdf to Markdown (needs uv; see 'convert --help')
 
 Options:
   -v, --version          Display CLI version
@@ -482,6 +484,10 @@ export async function main(argv = process.argv.slice(2)) {
   }
   if (argv[0] === "doctor") {
     process.exitCode = doctorCommand(argv.slice(1));
+    return;
+  }
+  if (argv[0] === "convert") {
+    runConvert(argv.slice(1));
     return;
   }
   const opts = parseCliArgs(argv);

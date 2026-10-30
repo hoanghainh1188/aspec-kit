@@ -13,10 +13,13 @@
   "files": [
     "bin",
     "src",
+    "python",
     "README.md"
   ],
   "scripts": {
-    "test": "node --test test/cli.test.js"
+    "prepack": "node tools/bundle-converter.mjs",
+    "test": "node --test test/cli.test.js test/convert.test.js",
+    "test:python": "uv run --script test/convert/test_convert_design.py"
   },
   "engines": {
     "node": ">=18.3.0"

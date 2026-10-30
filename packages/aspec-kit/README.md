@@ -49,6 +49,8 @@ npx @hoanghainh/aspec-kit update [project-directory] [--to <ref>] [--dry-run]
 - `update [dir]`: Upgrades the kit-owned files of an existing project (see [Updating a project](#updating-a-project)).
 - `doctor [dir] [--json]`: Health check of an existing project's environment and guardrails
   (see [Health check](#health-check-aspec-kit-doctor)).
+- `convert <file.xlsx|file.xlsm|file.pdf> [--out <dir>] [--force]`: Converts a 詳細設計 workbook or PDF
+  to Markdown (see [Convert design documents](#convert-design-documents)).
 
 ### Options & Flags
 
@@ -150,6 +152,31 @@ npx @hoanghainh/aspec-kit init my-app --steward @lead-engineer --clean
 
 ---
 
+## Convert design documents
+
+Claude Code's `Read` tool cannot parse binary `.xlsx`/`.pdf`. `convert` turns a 詳細設計 file into
+Markdown next to the original:
+
+```bash
+npx @hoanghainh/aspec-kit convert docs/02-detail-design/user-reservation/field-spec-v1.xlsx
+```
+
+- **Excel** → `field-spec-v1.md` (sheet index) + one `field-spec-v1__<NN>_<sheet>.md` per sheet.
+  Merged cells are expanded (value repeated), Excel 方眼紙 column spans are collapsed, tables stay GFM
+  tables, Japanese sheet names are kept (only characters illegal in file names are replaced).
+- **PDF** → `field-spec-v1.md` with text + tables per page (no OCR for scanned pages).
+- The original is never modified; an entry is appended to `CHANGELOG.md` in the output folder.
+- Existing Markdown is only overwritten when it was generated from the same source (`--force` to override).
+- `--out` defaults to the `docs/02-detail-design/<slug>/` folder that holds the file (or
+  `./docs/02-detail-design/<slug-of-file-name>/` when the file lives elsewhere).
+
+**Requires [uv](https://docs.astral.sh/uv/)** (Spec Kit needs it too). The CLI stays zero-dependency: it
+runs a Python script with inline [PEP 723](https://peps.python.org/pep-0723/) dependencies
+(`openpyxl`, `pdfplumber`) via `uv run --script`, which caches an isolated environment on first use.
+The same script is scaffolded into projects as `.claude/scripts/convert-design.py`.
+
+---
+
 ## Interactive Prompts
 
 When run without the `--yes` flag, the CLI guides you through 3 simple setup questions:
@@ -170,8 +197,13 @@ my-project/
 │   ├── settings.json              Permission boundaries (deny -> ask -> allow)
 │   ├── agents/                    5 subagents (design-intake, code-reviewer, security-reviewer, glossary-steward, impact-analyzer)
 │   ├── hooks/                     Format-on-save hook
+<<<<<<< HEAD
+│   ├── scripts/                   convert-design.py (詳細設計 .xlsx/.pdf → Markdown, via uv)
+│   └── commands/                  /design-to-code (orchestration) + /design-change (仕様変更 impact)
+=======
 │   ├── commands/                  /design-to-code (orchestration), /design-change (仕様変更 impact), /qa-sheet (質問票)
 │   └── scripts/                   qa_sheet.py — deterministic CSV/ingest for /qa-sheet
+>>>>>>> origin/main
 ├── docs/
 │   ├── 00-glossary.md              Single source of truth for JP / VI / EN business terms
 │   ├── 01-basic-design/            基本設計 directly from client (read-only)
