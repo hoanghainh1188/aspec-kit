@@ -20,8 +20,10 @@ jobs:
           test -f .claude/agents/code-reviewer.md
           test -f .claude/agents/security-reviewer.md
           test -f .claude/agents/glossary-steward.md
+          test -f .claude/agents/impact-analyzer.md
           test -f .claude/hooks/format.sh
           test -f .claude/commands/design-to-code.md
+          test -f .claude/commands/design-change.md
           test -f docs/00-glossary.md
           test -f docs/05-lessons.md
           test -f docs/CONSTITUTION_APPEND.md

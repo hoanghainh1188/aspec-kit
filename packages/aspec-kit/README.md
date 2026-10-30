@@ -44,6 +44,8 @@ npx @hoanghainh/aspec-kit [project-directory] [options]
 
 ### Commands
 - `init [dir]`: Scaffolds a new project (pass `.` to initialize in the current directory).
+- `doctor [dir] [--json]`: Health check of an existing project's environment and guardrails
+  (see [Health check](#health-check-aspec-kit-doctor)).
 - `convert <file.xlsx|file.xlsm|file.pdf> [--out <dir>] [--force]`: Converts a 詳細設計 workbook or PDF
   to Markdown (see [Convert design documents](#convert-design-documents)).
 
@@ -74,6 +76,28 @@ npx @hoanghainh/aspec-kit [project-directory] [options]
   `README`/`LICENSE`/`CONTRIBUTING` are not copied (see `.aspecignore`). A project `README.md` stub is
   generated instead (only if none exists).
 - Post-copy customization (CODEOWNERS, sample cleanup) only touches files created by the current run.
+
+### Health check (`aspec-kit doctor`)
+
+Run inside a scaffolded project (or pass its path) to see what is still missing before the team starts:
+
+```bash
+npx @hoanghainh/aspec-kit doctor          # human-readable report
+npx @hoanghainh/aspec-kit doctor --json   # machine-readable, e.g. for CI
+```
+
+| Check | Result when not satisfied |
+|---|---|
+| `git`, `uv` or `pipx`, Claude Code CLI (`claude`) on `PATH` | fail |
+| `python3` on `PATH` (used by `bootstrap.sh`) | warn |
+| Figma MCP server in `.mcp.json` / `~/.claude.json` (optional) | warn |
+| `.specify/` present, and every `/speckit-*` skill used by `/design-to-code` exists in `.claude/skills/` (same drift guard as `bootstrap.sh`) | fail |
+| `.github/CODEOWNERS` placeholder `@your-lead-handle` replaced | fail |
+| `.claude/hooks/format.sh` has a formatter configured | warn |
+| Branch protection on `main` (PR + Code Owners review + status checks) via `gh api` | fail if unprotected, warn if partial; **skipped** when `gh` is missing, not authenticated, or the repo is not on GitHub |
+
+Every non-ok line comes with a fix hint. The exit code is `1` when any check fails and `0` otherwise
+(warnings and skipped checks do not fail).
 
 ### Examples
 
@@ -133,10 +157,10 @@ my-project/
 ├── bootstrap.sh                    Script to initialize Spec Kit CLI and hooks
 ├── .claude/
 │   ├── settings.json              Permission boundaries (deny -> ask -> allow)
-│   ├── agents/                    4 subagents (design-intake, code-reviewer, security-reviewer, glossary-steward)
+│   ├── agents/                    5 subagents (design-intake, code-reviewer, security-reviewer, glossary-steward, impact-analyzer)
 │   ├── hooks/                     Format-on-save hook
 │   ├── scripts/                   convert-design.py (詳細設計 .xlsx/.pdf → Markdown, via uv)
-│   └── commands/                  Hybrid orchestration command /design-to-code
+│   └── commands/                  /design-to-code (orchestration) + /design-change (仕様変更 impact)
 ├── docs/
 │   ├── 00-glossary.md              Single source of truth for JP / VI / EN business terms
 │   ├── 01-basic-design/            基本設計 directly from client (read-only)

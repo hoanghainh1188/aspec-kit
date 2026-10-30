@@ -6,7 +6,7 @@ import readline from "node:readline/promises";
 import { execFileSync } from "node:child_process";
 import https from "node:https";
 import { parseArgs } from "node:util";
-
+import { doctorCommand } from "./commands/doctor.js";
 import { runConvert } from "./commands/convert.js";
 
 const GITHUB_OWNER_REPO = "hoanghainh1188/aspec-kit";
@@ -45,6 +45,8 @@ export const SAMPLE_FEATURE_PATHS = Object.freeze([
   "src/features/example-reservation",
   "docs/intake/000-example-reservation.md",
   "docs/04-decisions/2026-01-01-approval-vs-confirm.md",
+  "docs/02-detail-design/example-reservation",
+  "docs/changes/2026-10-31-example-reservation.md",
 ]);
 
 /** Shared files that reference the sample feature and must be filtered line-by-line. */
@@ -79,6 +81,7 @@ const HELP_TEXT = `Usage:
 
 Commands:
   init [dir]             Initialize a new aspec-kit project (use '.' for current dir)
+  doctor [dir] [--json]  Check environment & guardrails of a project (exit 1 on failure)
   convert <file>         Convert a 詳細設計 .xlsx/.pdf to Markdown (needs uv; see 'convert --help')
 
 Options:
@@ -98,6 +101,7 @@ Examples:
   npx @hoanghainh/aspec-kit init .
   npm init @hoanghainh/aspec-kit my-app
   npx @hoanghainh/aspec-kit my-app --steward @lead-engineer --clean
+  npx @hoanghainh/aspec-kit doctor --json
 `;
 
 export class CliError extends Error {
@@ -468,6 +472,10 @@ function printFileList(title, files, limit = 15) {
 export async function main(argv = process.argv.slice(2)) {
   const pkgPath = new URL("../package.json", import.meta.url);
   const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+  if (argv[0] === "doctor") {
+    process.exitCode = doctorCommand(argv.slice(1));
+    return;
+  }
   if (argv[0] === "convert") {
     runConvert(argv.slice(1));
     return;
