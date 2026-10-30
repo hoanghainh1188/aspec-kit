@@ -10,6 +10,7 @@ Bắt các lỗi mà check `test -f` bỏ sót:
   3. Runbook `design-to-code.md` đánh số bước không liên tục từ 1.
   4. Mermaid dùng class (`:::x`) chưa được `classDef`.
   5. Glossary có thuật ngữ 日本語 trùng nhau (2 dòng cùng 1 term → nhập nhằng).
+  6. Báo cáo 仕様変更 `docs/changes/*.md` (output `/design-change`) thiếu 1 trong 3 phần bắt buộc.
 
 Không phụ thuộc package ngoài — chỉ dùng stdlib, không cần mạng.
 """
@@ -151,6 +152,27 @@ def check_glossary_duplicates() -> None:
             seen[term] = i
 
 
+CHANGE_REPORT_SECTIONS = (
+    ("## 1. Bảng tác động", "bảng tác động"),
+    ("## 2. Đề xuất chạy lại", "đề xuất chạy lại"),
+    ("## 3. 影響範囲", "tóm tắt 影響範囲 cho khách"),
+)
+
+
+def check_change_reports() -> None:
+    changes_dir = os.path.join(ROOT, "docs", "changes")
+    if not os.path.isdir(changes_dir):
+        return
+    for fn in sorted(os.listdir(changes_dir)):
+        if not fn.endswith(".md") or fn == "README.md":
+            continue
+        with open(os.path.join(changes_dir, fn), encoding="utf-8") as f:
+            headings = [line.strip() for line in f if line.startswith("## ")]
+        for prefix, label in CHANGE_REPORT_SECTIONS:
+            if not any(h.startswith(prefix) for h in headings):
+                err(f"[changes] docs/changes/{fn}: thiếu phần `{prefix}…` ({label})")
+
+
 def main() -> int:
     md_files = iter_markdown()
     check_internal_links(md_files)
@@ -158,6 +180,7 @@ def main() -> int:
     check_runbook_numbering()
     check_mermaid(md_files)
     check_glossary_duplicates()
+    check_change_reports()
 
     if errors:
         print("✗ check-template: phát hiện vấn đề\n")
@@ -165,7 +188,7 @@ def main() -> int:
             print("  " + e)
         print(f"\nTổng: {len(errors)} lỗi")
         return 1
-    print("✓ check-template: link nội bộ, frontmatter, số bước, mermaid, glossary đều hợp lệ")
+    print("✓ check-template: link nội bộ, frontmatter, số bước, mermaid, glossary, báo cáo 仕様変更 đều hợp lệ")
     return 0
 
 

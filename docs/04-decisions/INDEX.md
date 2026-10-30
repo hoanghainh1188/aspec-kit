@@ -9,6 +9,7 @@ bảng này trước — nếu câu hỏi đã có ở đây, dùng lại quyế
 
 | Ngày | Quyết định | Feature | Thuật ngữ / chủ đề |
 |---|---|---|---|
+| 2026-10-31 | [`/design-to-code` tự gọi skill Spec Kit qua Skill tool, HANDOFF = fallback](2026-10-31-runbook-auto-invoke-speckit.md) | template (#27) | runbook / Skill tool |
 | 2026-01-01 | [承認 = "approval", không phải "confirm"](2026-01-01-approval-vs-confirm.md) *(mẫu — xoá)* | `000-example-reservation` | 承認 / approval |
 
 <!--

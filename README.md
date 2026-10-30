@@ -18,11 +18,12 @@ Production-ready greenfield project template and toolkit for **Claude Code**, sp
 ## Key Highlights
 
 - **[GitHub Spec Kit](https://github.com/github/spec-kit) Backbone**: End-to-end specification-driven pipeline (`constitution` -> `specify` -> `clarify` -> `plan` -> `tasks` -> `analyze` -> `implement`).
-- **4 Specialized Claude Code Subagents**: Fills the gap that raw Spec Kit does not cover:
+- **5 Specialized Claude Code Subagents**: Fills the gap that raw Spec Kit does not cover:
   - `design-intake`: Parses Japanese specifications and Figma (via MCP) into structured intake artifacts.
   - `code-reviewer`: Cross-references implementation against 4 truth sources (constitution, spec, plan, tasks).
   - `glossary-steward`: Guards terminology fidelity across Japanese, Vietnamese, and English in code and specs.
   - `security-reviewer`: Specialized OWASP Top 10, secret detection, and PII audit pass.
+  - `impact-analyzer`: Diffs two client design versions (仕様変更) and traces each change to the intake, spec ACs, tasks, source files, and tests it affects — driven by `/design-change`.
 - **5-Tier Git-Backed Project Memory**: Externalizes knowledge in Git files to eliminate AI context drift without database infrastructure overhead.
 - **Zero-Conflict Team Workflow**: Combines GitHub Issue IDs for branch naming (`NNN-<slug>`) and timestamp-based specification paths to prevent collision during parallel feature development.
 
@@ -77,7 +78,7 @@ Ideal when you want to equip existing codebases with aspec-kit agents and slash 
 /plugin install aspec-kit@hoanghainh1188
 ```
 
-Installs the 4 subagents (`design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`) and `/design-to-code` into user scope (`~/.claude/`). See details in [`plugin/README.md`](plugin/README.md).
+Installs the 5 subagents (`design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`, `impact-analyzer`) and the `/design-to-code` and `/design-change` commands into user scope (`~/.claude/`). See details in [`plugin/README.md`](plugin/README.md).
 
 ---
 
@@ -93,11 +94,13 @@ Installs the 4 subagents (`design-intake`, `code-reviewer`, `security-reviewer`,
 │   │   ├── design-intake.md       Extracts JP docs & Figma -> generates intake for /speckit-specify
 │   │   ├── code-reviewer.md       Post-implementation verification against 4 sources
 │   │   ├── security-reviewer.md   OWASP, secret detection, and PII audit
-│   │   └── glossary-steward.md    Guards JP-VI-EN terminology consistency
+│   │   ├── glossary-steward.md    Guards JP-VI-EN terminology consistency
+│   │   └── impact-analyzer.md     仕様変更 diff -> impacted artifacts with reasons (read-only)
 │   ├── hooks/
 │   │   └── format.sh              Format-on-save hook triggered on file edit
 │   └── commands/
-│       └── design-to-code.md      Hybrid orchestration runbook command
+│       ├── design-to-code.md      Hybrid orchestration runbook command
+│       └── design-change.md       /design-change <old> <new>: 仕様変更 impact report
 ├── docs/
 │   ├── 00-glossary.md              Single source of truth for JP / VI / EN business terms
 │   ├── 01-basic-design/            基本設計 directly from client (read-only)
@@ -106,6 +109,7 @@ Installs the 4 subagents (`design-intake`, `code-reviewer`, `security-reviewer`,
 │   ├── 04-decisions/               Decisions from /speckit-clarify (INDEX.md = lookup table)
 │   ├── 05-lessons.md               Technical gotchas and project lessons learned
 │   ├── intake/                     Output artifacts from design-intake
+│   ├── changes/                    仕様変更 impact reports from /design-change
 │   └── CONSTITUTION_APPEND.md      Recommended constitution articles for JP projects
 ├── src/                            Application source code (src/features/<slug>/)
 ├── tests/                          Automated test suites
@@ -135,13 +139,17 @@ The template includes a miniature reference feature — **予約承認 (Reservat
 - `docs/04-decisions/2026-01-01-approval-vs-confirm.md`: Sample decision artifact.
 - `specs/000-example-reservation/`: Sample `spec.md`, `plan.md`, and `tasks.md`.
 - `src/features/example-reservation/`: Sample TypeScript implementation and unit tests illustrating TDD under Article W.
+- `docs/02-detail-design/example-reservation/`: Sample client detail design, `field-spec-v1.md` → `field-spec-v2.md` + `CHANGELOG.md` (a 仕様変更 fixture).
+- `docs/changes/2026-10-31-example-reservation.md`: Sample `/design-change` impact report for that v1 → v2 change.
 
 **To clean up the sample feature before starting a real project:**
 ```bash
 rm -rf specs/000-example-reservation \
        src/features/example-reservation \
        docs/intake/000-example-reservation.md \
-       docs/04-decisions/2026-01-01-approval-vs-confirm.md
+       docs/04-decisions/2026-01-01-approval-vs-confirm.md \
+       docs/02-detail-design/example-reservation \
+       docs/changes/2026-10-31-example-reservation.md
 # Remove the sample entry from INDEX.md:
 python3 -c "
 from pathlib import Path
@@ -164,8 +172,9 @@ p.write_text('\n'.join(lines) + '\n')
    - `docs/03-ui/<slug>/figma-links.md` — Figma nodes and reference screenshots.
    *(Note: For binary `.docx/.xlsx/.pdf` files, export text/markdown copies alongside the originals for direct tool parsing).*
 3. **Execute `/design-to-code`** in Claude Code, providing document paths when prompted.
-4. At each **[HANDOFF]** step, copy and run the precise `/speckit-*` command output by Claude.
+4. Claude runs each Spec Kit step (`speckit-specify|clarify|plan|tasks|analyze|implement`) itself via the **Skill tool** and pauses for you to review the artifact. Answer `clarify` questions in chat. Only if a skill is missing or blocked does it fall back to **[HANDOFF]**: copy and run the `/speckit-*` command it prints. See [`docs/04-decisions/2026-10-31-runbook-auto-invoke-speckit.md`](docs/04-decisions/2026-10-31-runbook-auto-invoke-speckit.md).
 5. Review checkpoints at every **[PAUSE]** (intake review, analyze gate, test gate, deployment).
+6. **When the client sends a new design version (仕様変更)**: add it as a new file + `CHANGELOG.md` entry, run `/design-change <old> <new>`, review the report in `docs/changes/` (impact table with reasons, suggested `/speckit-*` re-runs, Japanese 影響範囲 summary for the client), then re-run the pipeline as suggested.
 
 ### Workflow Diagram
 
@@ -176,15 +185,15 @@ flowchart TD
     B2 --> C["Create git branch NNN-feature"]:::auto
     C --> D["design-intake reads docs → docs/intake/"]:::auto
     D --> E{"PAUSE — Review intake<br/>prompt & ambiguities"}:::stop
-    E --> F["/speckit-specify — prompt from intake"]:::handoff
+    E --> F["speckit-specify (Skill) — prompt from intake<br/>PAUSE review spec"]:::skill
     F --> G{"Ambiguities detected?"}:::stop
-    G -- Yes --> H["/speckit-clarify → docs/04-decisions/"]:::handoff
-    G -- No --> I["/speckit-plan"]:::handoff
+    G -- Yes --> H["speckit-clarify (Skill, you answer)<br/>→ docs/04-decisions/"]:::skill
+    G -- No --> I["speckit-plan (Skill)<br/>PAUSE review plan"]:::skill
     H --> I
-    I --> J["/speckit-tasks"]:::handoff
-    J --> K{"PAUSE — /speckit-analyze<br/>any warnings?"}:::stop
+    I --> J["speckit-tasks (Skill)<br/>PAUSE review tasks"]:::skill
+    J --> K{"PAUSE — speckit-analyze (Skill)<br/>any warnings?"}:::stop
     K -- Yes, fix spec/plan/tasks --> F
-    K -- No --> L["/speckit-implement → generate code"]:::handoff
+    K -- No --> L["speckit-implement (Skill, after your OK)<br/>→ generate code"]:::skill
     L --> M{"code-reviewer<br/>any Blocking issues?"}:::auto
     M -- Yes --> L
     M -- No --> Q["glossary-steward<br/>verify terms vs glossary"]:::auto
@@ -197,14 +206,14 @@ flowchart TD
 
     classDef user fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
     classDef auto fill:#dcfce7,stroke:#15803d,color:#14532d
-    classDef handoff fill:#fef9c3,stroke:#a16207,color:#713f12
+    classDef skill fill:#fef9c3,stroke:#a16207,color:#713f12
     classDef stop fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
 ```
 
 **Step Categories:**
 - 🟦 **User Action**: Manual inputs and reviews.
 - 🟩 **[AUTO]**: Claude executes automatically (git branch, calling subagents).
-- 🟨 **[HANDOFF]**: User pastes and runs the `/speckit-*` command printed by Claude.
+- 🟨 **[SKILL]**: Claude invokes the Spec Kit skill itself via the Skill tool, then pauses for your review. Fallback **[HANDOFF]** (skill missing/blocked): you paste and run the `/speckit-*` command Claude prints.
 - 🟥 **[PAUSE]**: Mandatory approval gate.
 
 ---
@@ -232,6 +241,14 @@ For comprehensive team guidelines, consult [`docs/TEAM-WORKFLOW.md`](docs/TEAM-W
 - **Spec Kit CLI**: Installed via `uv` or `pipx` (`uvx --from git+https://github.com/github/spec-kit.git specify init ...`).
 - **Git**: Installed and configured.
 - **Figma MCP Server** (Optional): Pre-configured for both `mcp__figma__*` and `mcp__claude_ai_Figma__*`. If omitted, `design-intake` gracefully falls back to local snapshots in `docs/03-ui/`.
+
+Check all of the above — plus the guardrails from [`docs/PRODUCTION-READINESS.md`](docs/PRODUCTION-READINESS.md) (CODEOWNERS steward, `format.sh` formatter, `/speckit-*` skill drift, branch protection on `main`) — with:
+
+```bash
+npx @hoanghainh/aspec-kit doctor          # add --json for machine-readable output
+```
+
+It prints ok / warn / fail with a fix hint for each item and exits non-zero when anything fails.
 
 ---
 
