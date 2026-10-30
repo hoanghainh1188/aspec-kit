@@ -106,9 +106,9 @@ my-project/
 ├── bootstrap.sh                    Script to initialize Spec Kit CLI and hooks
 ├── .claude/
 │   ├── settings.json              Permission boundaries (deny -> ask -> allow)
-│   ├── agents/                    4 subagents (design-intake, code-reviewer, security-reviewer, glossary-steward)
+│   ├── agents/                    5 subagents (design-intake, code-reviewer, security-reviewer, glossary-steward, impact-analyzer)
 │   ├── hooks/                     Format-on-save hook
-│   └── commands/                  Hybrid orchestration command /design-to-code
+│   └── commands/                  /design-to-code (orchestration) + /design-change (仕様変更 impact)
 ├── docs/
 │   ├── 00-glossary.md              Single source of truth for JP / VI / EN business terms
 │   ├── 01-basic-design/            基本設計 directly from client (read-only)

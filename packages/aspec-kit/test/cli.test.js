@@ -58,6 +58,10 @@ function makeTemplate(root) {
   writeFile(root, "docs/04-decisions/2026-01-01-approval-vs-confirm.md", "sample");
   writeFile(root, "specs/000-example-reservation/spec.md", "sample");
   writeFile(root, "src/features/example-reservation/a.ts", "sample");
+  writeFile(root, "docs/02-detail-design/example-reservation/field-spec-v2.md", "sample");
+  writeFile(root, "docs/02-detail-design/README.md", "keep");
+  writeFile(root, "docs/changes/2026-10-31-example-reservation.md", "sample");
+  writeFile(root, "docs/changes/README.md", "keep");
   writeFile(root, "src/.gitkeep", "");
   writeFile(root, ".aspecignore", "# comment\n/docs/private/\n");
   writeFile(root, "docs/private/secret.md", "kit only");
@@ -214,6 +218,9 @@ describe("customization", () => {
     assert.ok(!fs.existsSync(path.join(dest, "docs/intake/000-example-reservation.md")));
     assert.ok(!fs.existsSync(path.join(dest, "src/features/example-reservation/a.ts")));
     assert.ok(fs.existsSync(path.join(dest, "src/features/example-reservation/user-file.ts")));
+    assert.ok(!fs.existsSync(path.join(dest, "docs/02-detail-design/example-reservation")));
+    assert.ok(!fs.existsSync(path.join(dest, "docs/changes/2026-10-31-example-reservation.md")));
+    assert.ok(fs.existsSync(path.join(dest, "docs/changes/README.md")), "docs/changes/ README is kept");
     assert.ok(fs.existsSync(path.join(dest, "specs")), "parent specs/ dir is kept");
 
     const index = fs.readFileSync(path.join(dest, "docs/04-decisions/INDEX.md"), "utf-8");
