@@ -25,9 +25,12 @@ jobs:
           test -f docs/00-glossary.md
           test -f docs/05-lessons.md
           test -f docs/CONSTITUTION_APPEND.md
-          test -f .claude-plugin/plugin.json
-          test -f .claude-plugin/marketplace.json
           test -f .github/scripts/check-template.py
+          # Plugin metadata only exists in the kit repo (the CLI does not scaffold it)
+          if [ -d .claude-plugin ]; then
+            test -f .claude-plugin/plugin.json
+            test -f .claude-plugin/marketplace.json
+          fi
           echo "✓ Cấu trúc template hợp lệ"
 
       - name: Kiểm tra nội dung template (link/frontmatter/step/mermaid)
@@ -41,6 +44,7 @@ jobs:
       - name: Kiểm tra JSON hợp lệ
         run: |
           python3 -c "import json; json.load(open('.claude/settings.json'))"
-          python3 -c "import json; json.load(open('.claude-plugin/plugin.json'))"
-          python3 -c "import json; json.load(open('.claude-plugin/marketplace.json'))"
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json; do
+            if [ -f "$f" ]; then python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"; fi
+          done
           echo "✓ JSON hợp lệ"

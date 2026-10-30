@@ -1,6 +1,6 @@
 {
   "name": "@hoanghainh/aspec-kit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Scaffold a new spec-driven project with Claude Code and Japanese design intake",
   "type": "module",
   "bin": {
@@ -15,8 +15,11 @@
     "src",
     "README.md"
   ],
+  "scripts": {
+    "test": "node --test test/cli.test.js"
+  },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.3.0"
   },
   "keywords": [
     "spec-driven",

@@ -1,0 +1,60 @@
+# kit-ci — CI for the aspec-kit repository itself (CLI package, versions, sample feature).
+# NOT scaffolded into user projects (listed in .aspecignore / DEFAULT_EXCLUDES).
+name: kit-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  cli:
+    name: CLI tests (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['18', '20', '22']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Unit + end-to-end tests (local template, no network)
+        working-directory: packages/aspec-kit
+        run: npm test
+
+      - name: Scaffold from current commit and verify the generated project
+        run: |
+          ASPEC_KIT_TEMPLATE_DIR="$GITHUB_WORKSPACE" \
+            node packages/aspec-kit/bin/run.js init "$RUNNER_TEMP/demo" -y --clean --steward @ci-bot
+          cd "$RUNNER_TEMP/demo"
+          test ! -e .github/workflows/publish-npm.yml
+          test ! -e packages
+          python3 .github/scripts/check-template.py
+          bash -n bootstrap.sh
+          echo "✓ Scaffolded project is valid"
+
+  versions:
+    name: Version consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node .github/scripts/sync-version.mjs --check
+
+  sample-feature:
+    name: Sample feature tests (Article W evidence)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Run without adding a root package.json, so the template stays stack-agnostic
+      - name: Run sample tests with Vitest
+        run: npx --yes vitest@3 run src/features/example-reservation

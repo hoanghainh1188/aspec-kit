@@ -54,8 +54,24 @@ npx @hoanghainh/aspec-kit [project-directory] [options]
 | `--steward <handle>` | Specify GitHub handle of project Steward for `.github/CODEOWNERS` | `@your-handle` |
 | `--clean` | Automatically clean up reference sample feature (`000-example-reservation`) | `true` with `-y` |
 | `--keep-example` | Keep the sample feature to inspect code & spec structure | `false` |
+| `--force` | Overwrite files that already exist in the target directory | `false` (existing files are kept & reported) |
+| `--template-ref <ref>` | Git tag/branch of the template to fetch | `v<cli-version>` (falls back to `main` with a warning) |
 | `-v, --version` | Output current CLI version | — |
 | `-h, --help` | Display usage guide and options | — |
+
+> Unknown flags and missing option values (e.g. `--steward` without a handle) are rejected with an error.
+> `--steward` accepts a GitHub user (`@lead`), a team (`@org/team`) or an email.
+
+### Safety guarantees
+
+- **No silent overwrite**: when scaffolding into a non-empty directory (e.g. `init .`), existing files are
+  **kept** and listed as *Skipped*. Pass `--force` to overwrite them.
+- **Reproducible template**: the template is fetched from the git tag matching the CLI version
+  (`v<version>`), not from a moving `main` branch.
+- **Kit-only files are excluded**: npm publish workflow, `packages/`, plugin metadata, banner, kit
+  `README`/`LICENSE`/`CONTRIBUTING` are not copied (see `.aspecignore`). A project `README.md` stub is
+  generated instead (only if none exists).
+- Post-copy customization (CODEOWNERS, sample cleanup) only touches files created by the current run.
 
 ### Examples
 
