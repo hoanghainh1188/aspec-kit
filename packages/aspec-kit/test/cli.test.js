@@ -21,6 +21,7 @@ import {
   removeSampleFeature,
   writeProjectReadme,
 } from "../src/index.js";
+import { isProtected, parseUpdateArgs } from "../src/commands/update.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, "..", "..", "..");
@@ -284,5 +285,172 @@ describe("CLI end-to-end (local template)", () => {
     const out = run(["init", ".", "-y", "--clean"], tmp);
     assert.match(out, /Skipped/);
     assert.equal(fs.readFileSync(path.join(tmp, "CLAUDE.md"), "utf-8"), "MY OWN RULES");
+  });
+});
+
+// update ─────────────────────────────────────────────────────────────────────
+describe("aspec-kit update", () => {
+  const runWith = (templateDir, args, cwd) =>
+    execFileSync(process.execPath, [BIN, ...args], {
+      cwd,
+      env: { ...process.env, ASPEC_KIT_TEMPLATE_DIR: templateDir, NO_COLOR: "1" },
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  const read = (root, rel) => fs.readFileSync(path.join(root, rel), "utf-8");
+  const manifestOf = (root) => JSON.parse(read(root, ".aspec-kit.json"));
+
+  /** Scaffold a project from template v1 (with the sample kept), then return paths. */
+  function scaffold() {
+    const v1 = path.join(tmp, "v1");
+    makeTemplate(v1);
+    writeFile(v1, ".claude/agents/reviewer.md", "reviewer v1");
+    writeFile(v1, "docs/runbook.md", "runbook v1");
+    writeFile(v1, "docs/old.md", "old v1");
+    writeFile(v1, "docs/00-glossary.md", "glossary v1");
+    writeFile(v1, "docs/01-basic-design/README.md", "basic v1");
+    runWith(v1, ["init", "proj", "-y", "--keep-example", "--steward", "@lead"], tmp);
+    const proj = path.join(tmp, "proj");
+
+    // v2: everything kit-owned and protected changes, docs/old.md removed, a new hook added
+    const v2 = path.join(tmp, "v2");
+    makeTemplate(v2);
+    writeFile(v2, ".claude/agents/reviewer.md", "reviewer v2");
+    writeFile(v2, "docs/runbook.md", "runbook v2");
+    writeFile(v2, "CLAUDE.md", "# rules v2");
+    writeFile(v2, ".github/CODEOWNERS", "docs/00-glossary.md  @your-lead-handle\nsrc/  @your-lead-handle\n");
+    writeFile(v2, ".claude/hooks/new.sh", "#!/bin/sh\n");
+    writeFile(v2, "docs/00-glossary.md", "glossary v2");
+    writeFile(v2, "docs/01-basic-design/README.md", "basic v2");
+    writeFile(v2, "docs/05-lessons.md", "lessons v2");
+    writeFile(v2, "specs/000-example-reservation/spec.md", "spec v2");
+    writeFile(v2, "src/features/example-reservation/a.ts", "code v2");
+    return { v1, v2, proj };
+  }
+
+  test("init writes a manifest with ref, steward and a hash per scaffolded file", () => {
+    const { proj } = scaffold();
+    const m = manifestOf(proj);
+    assert.equal(m.templateRef, "local");
+    assert.equal(m.steward, "@lead");
+    assert.match(m.files["CLAUDE.md"], /^sha256:[0-9a-f]{64}$/);
+    assert.ok(m.files[".claude/agents/reviewer.md"]);
+    assert.ok(!m.files["README.md"], "generated README is not kit-owned");
+    assert.ok(!m.files["LICENSE"], "excluded files are not recorded");
+  });
+
+  test("--dry-run prints the plan and writes nothing", () => {
+    const { v2, proj } = scaffold();
+    const before = read(proj, ".aspec-kit.json");
+    const out = runWith(v2, ["update", "--dry-run"], proj);
+    assert.match(out, /\[dry-run\] Updated \(\d+\):[\s\S]*\.claude\/agents\/reviewer\.md/);
+    assert.match(out, /\[dry-run\] Added \(1\):\n   - \.claude\/hooks\/new\.sh/);
+    assert.match(out, /Dry run — no files were written/);
+    assert.equal(read(proj, ".claude/agents/reviewer.md"), "reviewer v1");
+    assert.ok(!fs.existsSync(path.join(proj, ".claude/hooks/new.sh")));
+    assert.equal(read(proj, ".aspec-kit.json"), before);
+  });
+
+  test("clean update overwrites untouched files, adds, removes and refreshes the manifest", () => {
+    const { v2, proj } = scaffold();
+    runWith(v2, ["update"], proj);
+    assert.equal(read(proj, ".claude/agents/reviewer.md"), "reviewer v2");
+    assert.equal(read(proj, "CLAUDE.md"), "# rules v2");
+    assert.equal(read(proj, ".claude/hooks/new.sh"), "#!/bin/sh\n");
+    assert.ok(!fs.existsSync(path.join(proj, "docs/old.md")), "removed upstream & untouched → deleted");
+    // Recorded steward is re-applied to the new CODEOWNERS
+    assert.equal(read(proj, ".github/CODEOWNERS"), "docs/00-glossary.md  @lead\nsrc/  @lead\n");
+
+    const m = manifestOf(proj);
+    assert.ok(m.files[".claude/hooks/new.sh"]);
+    assert.ok(!m.files["docs/old.md"]);
+    // Second run is a no-op
+    const out = runWith(v2, ["update"], proj);
+    assert.doesNotMatch(out, /^(Updated|Added|Conflicts) /m);
+  });
+
+  test("local-only changes are kept; changes on both sides become conflicts", () => {
+    const { v1, v2, proj } = scaffold();
+    writeFile(proj, "bootstrap.sh", "#!/usr/bin/env bash\n# my tweak\n"); // unchanged in v2
+    writeFile(proj, ".claude/agents/reviewer.md", "reviewer MINE"); // changed in v2 too
+    writeFile(proj, "docs/old.md", "old MINE"); // removed in v2
+
+    const out = runWith(v2, ["update"], proj);
+    assert.match(out, /Conflicts \(kept[^\n]*\) \(1\):\n   - \.claude\/agents\/reviewer\.md/);
+    assert.match(out, /Kept \(changed only locally\) \(1\):\n   - bootstrap\.sh/);
+    assert.equal(read(proj, ".claude/agents/reviewer.md"), "reviewer MINE", "never overwritten");
+    assert.equal(read(proj, ".claude/agents/reviewer.md.aspec-new"), "reviewer v2");
+    assert.equal(read(proj, "bootstrap.sh"), "#!/usr/bin/env bash\n# my tweak\n");
+    assert.equal(read(proj, "docs/old.md"), "old MINE");
+
+    // After a conflict the base moves to the new template: a later run with the same template
+    // keeps the user's resolution instead of reporting the conflict again.
+    const again = runWith(v2, ["update"], proj);
+    assert.doesNotMatch(again, /Conflicts/);
+    assert.ok(fs.existsSync(v1));
+  });
+
+  test("protected paths are never touched", () => {
+    const { v2, proj } = scaffold();
+    const protectedFiles = [
+      "docs/00-glossary.md",
+      "docs/01-basic-design/README.md",
+      "docs/05-lessons.md",
+      "docs/04-decisions/INDEX.md",
+      "specs/000-example-reservation/spec.md",
+      "src/features/example-reservation/a.ts",
+    ];
+    const before = Object.fromEntries(protectedFiles.map((rel) => [rel, read(proj, rel)]));
+    fs.rmSync(path.join(proj, "docs/intake/000-example-reservation.md"));
+
+    const out = runWith(v2, ["update"], proj);
+    assert.match(out, /protected \(never touched\): \d+/);
+    for (const rel of protectedFiles) {
+      assert.equal(read(proj, rel), before[rel], `${rel} must be unchanged`);
+      assert.ok(!fs.existsSync(path.join(proj, `${rel}.aspec-new`)));
+    }
+    assert.ok(!fs.existsSync(path.join(proj, "docs/intake/000-example-reservation.md")), "not re-added");
+  });
+
+  test("project without a manifest: identical files update cleanly, differing ones conflict", () => {
+    const { v2, proj } = scaffold();
+    fs.rmSync(path.join(proj, ".aspec-kit.json"));
+    const out = runWith(v2, ["update"], proj);
+    assert.match(out, /No \.aspec-kit\.json found/);
+    // reviewer.md is v1 on disk, v2 upstream, unknown base → treated as user-modified
+    assert.equal(read(proj, ".claude/agents/reviewer.md"), "reviewer v1");
+    assert.equal(read(proj, ".claude/agents/reviewer.md.aspec-new"), "reviewer v2");
+    assert.equal(read(proj, ".claude/hooks/new.sh"), "#!/bin/sh\n");
+    assert.ok(manifestOf(proj).files["CLAUDE.md"], "manifest is created");
+  });
+
+  test("refuses a directory that is not an aspec-kit project", () => {
+    const tpl = path.join(tmp, "tpl");
+    makeTemplate(tpl);
+    fs.mkdirSync(path.join(tmp, "empty"));
+    assert.throws(() => runWith(tpl, ["update", "empty"], tmp), /does not look like an aspec-kit project/);
+  });
+
+  test("update args are validated", () => {
+    assert.deepEqual(parseUpdateArgs(["proj", "--to", "v0.3.0", "--dry-run"]), {
+      help: false,
+      dryRun: true,
+      to: "v0.3.0",
+      target: "proj",
+    });
+    assert.throws(() => parseUpdateArgs(["--to", "main; rm -rf /"]), CliError);
+    assert.throws(() => parseUpdateArgs(["--force"]), CliError);
+    assert.throws(() => parseUpdateArgs(["a", "b"]), /Unexpected arguments/);
+  });
+
+  test("isProtected covers client docs, memory, specs and src only", () => {
+    for (const p of ["docs/01-basic-design/a.md", "docs/02-detail-design/x", "docs/03-ui/y",
+      "docs/00-glossary.md", "docs/04-decisions/INDEX.md", "docs/05-lessons.md",
+      "docs/intake/a.md", "specs/x/spec.md", "src/a.ts", ".aspec-kit.json"]) {
+      assert.equal(isProtected(p), true, p);
+    }
+    for (const p of ["docs/TEAM-WORKFLOW.md", "CLAUDE.md", ".claude/agents/a.md", "srcx/a", "docs/10-x"]) {
+      assert.equal(isProtected(p), false, p);
+    }
   });
 });

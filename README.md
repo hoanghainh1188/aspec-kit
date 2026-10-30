@@ -51,6 +51,14 @@ cd my-project
 bash bootstrap.sh
 ```
 
+Later, pull template fixes (agents, runbooks, hooks, CI) into the project without touching your
+design docs, glossary, decisions, specs or `src/`:
+```bash
+npx @hoanghainh/aspec-kit update --dry-run   # preview; drop --dry-run to apply
+```
+Files you edited are kept; if the template changed them too, the new version is written next to them
+as `<file>.aspec-new` for a manual merge (details: [`packages/aspec-kit/README.md`](packages/aspec-kit/README.md#updating-a-project)).
+
 ### Method 2: Use as GitHub Template Repository
 
 1. Fork/clone this repository to your GitHub account.
