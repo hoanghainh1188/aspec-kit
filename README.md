@@ -234,6 +234,14 @@ For comprehensive team guidelines, consult [`docs/TEAM-WORKFLOW.md`](docs/TEAM-W
 - **Git**: Installed and configured.
 - **Figma MCP Server** (Optional): Pre-configured for both `mcp__figma__*` and `mcp__claude_ai_Figma__*`. If omitted, `design-intake` gracefully falls back to local snapshots in `docs/03-ui/`.
 
+Check all of the above — plus the guardrails from [`docs/PRODUCTION-READINESS.md`](docs/PRODUCTION-READINESS.md) (CODEOWNERS steward, `format.sh` formatter, `/speckit-*` skill drift, branch protection on `main`) — with:
+
+```bash
+npx @hoanghainh/aspec-kit doctor          # add --json for machine-readable output
+```
+
+It prints ok / warn / fail with a fix hint for each item and exits non-zero when anything fails.
+
 ---
 
 ## Contributing & License

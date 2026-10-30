@@ -21,6 +21,15 @@ import {
   removeSampleFeature,
   writeProjectReadme,
 } from "../src/index.js";
+import {
+  BOOTSTRAP_SKILLS,
+  checkBranchProtection,
+  doctorCommand,
+  isFormatHookConfigured,
+  makeHasCommand,
+  referencedSkills,
+  runDoctor,
+} from "../src/commands/doctor.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, "..", "..", "..");
@@ -291,5 +300,235 @@ describe("CLI end-to-end (local template)", () => {
     const out = run(["init", ".", "-y", "--clean"], tmp);
     assert.match(out, /Skipped/);
     assert.equal(fs.readFileSync(path.join(tmp, "CLAUDE.md"), "utf-8"), "MY OWN RULES");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// aspec-kit doctor (all side effects injected — no network, no real gh/claude)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Project that passes every file-based check. */
+function makeHealthyProject(root) {
+  fs.mkdirSync(path.join(root, ".specify"), { recursive: true });
+  writeFile(root, ".claude/commands/design-to-code.md", "Run /speckit-specify then /speckit-x and /speckit-plan\n");
+  for (const s of BOOTSTRAP_SKILLS) writeFile(root, `.claude/skills/speckit-${s}/SKILL.md`, "skill");
+  writeFile(root, ".github/CODEOWNERS", "# replace @your-lead-handle\ndocs/00-glossary.md  @lead\n");
+  writeFile(root, ".claude/hooks/format.sh", "#!/usr/bin/env bash\n# exit 0\ngofmt -w \"$FILE\"\n");
+  writeFile(root, ".mcp.json", JSON.stringify({ mcpServers: { figma: {} } }));
+}
+
+const ALL_TOOLS = () => true;
+const PROTECTED = JSON.stringify({
+  required_pull_request_reviews: { require_code_owner_reviews: true },
+  required_status_checks: { contexts: ["ci"] },
+});
+
+/** Fake runner: `responses` maps "cmd arg0 arg1" prefixes to results; records calls. */
+function fakeRun(responses = {}) {
+  const calls = [];
+  const runner = (cmd, args) => {
+    const key = [cmd, ...args].join(" ");
+    calls.push(key);
+    const hit = Object.keys(responses).find((k) => key.startsWith(k));
+    return hit ? { stdout: "", stderr: "", status: 0, ...responses[hit] } : { status: 1, stdout: "", stderr: "" };
+  };
+  runner.calls = calls;
+  return runner;
+}
+const ghOk = (protection = { stdout: PROTECTED }) =>
+  fakeRun({ "gh auth status": { status: 0 }, "gh api": protection });
+
+const byId = (report, id) => report.checks.find((c) => c.id === id);
+
+describe("doctor", () => {
+  test("healthy project → all ok, exit 0", () => {
+    makeHealthyProject(tmp);
+    const report = runDoctor({ cwd: tmp, hasCommand: ALL_TOOLS, run: ghOk(), homeDir: tmp });
+    assert.deepEqual(
+      report.checks.filter((c) => c.status !== "ok").map((c) => c.id),
+      []
+    );
+    assert.equal(report.ok, true);
+  });
+
+  test("missing tools: git/uv/claude fail, python3 warns, uvx alone is enough", () => {
+    makeHealthyProject(tmp);
+    const none = runDoctor({ cwd: tmp, hasCommand: () => false, run: fakeRun(), homeDir: tmp });
+    assert.equal(byId(none, "tool.git").status, "fail");
+    assert.equal(byId(none, "tool.uv").status, "fail");
+    assert.equal(byId(none, "tool.claude").status, "fail");
+    assert.equal(byId(none, "tool.python3").status, "warn");
+    assert.ok(byId(none, "tool.git").hint);
+    assert.equal(none.ok, false);
+
+    const onlyPipx = runDoctor({ cwd: tmp, hasCommand: (c) => c === "pipx", run: fakeRun(), homeDir: tmp });
+    assert.equal(byId(onlyPipx, "tool.uv").status, "ok");
+  });
+
+  test("Figma MCP: detected in ~/.claude.json project scope, otherwise warn only", () => {
+    makeHealthyProject(tmp);
+    fs.rmSync(path.join(tmp, ".mcp.json"));
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "aspec-home-"));
+    try {
+      let report = runDoctor({ cwd: tmp, hasCommand: ALL_TOOLS, run: ghOk(), homeDir: home });
+      assert.equal(byId(report, "tool.figma-mcp").status, "warn");
+      assert.equal(report.ok, true, "a missing Figma MCP must not fail doctor");
+
+      writeFile(home, ".claude.json", JSON.stringify({ projects: { [tmp]: { mcpServers: { Figma: {} } } } }));
+      report = runDoctor({ cwd: tmp, hasCommand: ALL_TOOLS, run: ghOk(), homeDir: home });
+      assert.equal(byId(report, "tool.figma-mcp").status, "ok");
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  test(".specify/ missing → fail with bootstrap hint", () => {
+    makeHealthyProject(tmp);
+    fs.rmSync(path.join(tmp, ".specify"), { recursive: true });
+    const report = runDoctor({ cwd: tmp, hasCommand: ALL_TOOLS, run: ghOk(), homeDir: tmp });
+    assert.equal(byId(report, "speckit.specify-dir").status, "fail");
+    assert.match(byId(report, "speckit.specify-dir").hint, /bootstrap\.sh/);
+    assert.equal(byId(report, "speckit.skills"), undefined);
+  });
+
+  test("skill referenced by the runbook but not installed → fail (drift guard)", () => {
+    makeHealthyProject(tmp);
+    writeFile(tmp, ".claude/commands/design-to-code.md", "/speckit-specify /speckit-checklist\n");
+    fs.rmSync(path.join(tmp, ".claude/skills/speckit-tasks"), { recursive: true });
+    const c = byId(runDoctor({ cwd: tmp, hasCommand: ALL_TOOLS, run: ghOk(), homeDir: tmp }), "speckit.skills");
+    assert.equal(c.status, "fail");
+    assert.match(c.message, /speckit-tasks/);
+    assert.match(c.message, /speckit-checklist/);
+  });
+
+  test("referencedSkills ignores placeholders and dedupes", () => {
+    assert.deepEqual(referencedSkills("/speckit-plan /speckit-x /speckit-* /speckit-plan /speckit-tasks"), [
+      "plan",
+      "tasks",
+    ]);
+  });
+
+  test("CODEOWNERS placeholder (outside comments) → fail; missing file → fail", () => {
+    makeHealthyProject(tmp);
+    writeFile(tmp, ".github/CODEOWNERS", "docs/00-glossary.md  @your-lead-handle\n");
+    let report = runDoctor({ cwd: tmp, hasCommand: ALL_TOOLS, run: ghOk(), homeDir: tmp });
+    assert.equal(byId(report, "guard.codeowners").status, "fail");
+    fs.rmSync(path.join(tmp, ".github/CODEOWNERS"));
+    report = runDoctor({ cwd: tmp, hasCommand: ALL_TOOLS, run: ghOk(), homeDir: tmp });
+    assert.equal(byId(report, "guard.codeowners").status, "fail");
+  });
+
+  test("format.sh: template no-op is not configured, real command is", () => {
+    const template = fs.readFileSync(path.join(REPO_ROOT, ".claude/hooks/format.sh"), "utf-8");
+    assert.equal(isFormatHookConfigured(template), false);
+    assert.equal(isFormatHookConfigured("#!/bin/sh\nnpx --no-install prettier --write \"$F\"\n"), true);
+
+    makeHealthyProject(tmp);
+    writeFile(tmp, ".claude/hooks/format.sh", template);
+    const report = runDoctor({ cwd: tmp, hasCommand: ALL_TOOLS, run: ghOk(), homeDir: tmp });
+    assert.equal(byId(report, "guard.format-hook").status, "warn");
+    assert.equal(report.ok, true);
+  });
+
+  describe("branch protection", () => {
+    const ctx = (run, hasCommand = ALL_TOOLS) => ({ cwd: tmp, run, hasCommand });
+
+    test("gh not installed → skip without running anything", () => {
+      const run = fakeRun();
+      const c = checkBranchProtection(ctx(run, (cmd) => cmd !== "gh"));
+      assert.equal(c.status, "skip");
+      assert.deepEqual(run.calls, []);
+    });
+
+    test("gh not authenticated → skip, no api call", () => {
+      const run = fakeRun({ "gh auth status": { status: 1 } });
+      const c = checkBranchProtection(ctx(run));
+      assert.equal(c.status, "skip");
+      assert.ok(!run.calls.some((k) => k.startsWith("gh api")));
+    });
+
+    test("fully protected → ok; queries main via gh api", () => {
+      const run = ghOk();
+      assert.equal(checkBranchProtection(ctx(run)).status, "ok");
+      assert.ok(run.calls.includes("gh api repos/{owner}/{repo}/branches/main/protection"));
+    });
+
+    test("protected without Code Owners review → warn", () => {
+      const stdout = JSON.stringify({ required_pull_request_reviews: {}, required_status_checks: {} });
+      const c = checkBranchProtection(ctx(ghOk({ stdout })));
+      assert.equal(c.status, "warn");
+      assert.match(c.message, /Code Owners/);
+    });
+
+    test("branch not protected → fail", () => {
+      const c = checkBranchProtection(ctx(ghOk({ status: 1, stderr: "gh: Branch not protected (HTTP 404)" })));
+      assert.equal(c.status, "fail");
+    });
+
+    test("403 → warn; other errors (no remote) → skip", () => {
+      assert.equal(checkBranchProtection(ctx(ghOk({ status: 1, stderr: "HTTP 403" }))).status, "warn");
+      assert.equal(
+        checkBranchProtection(ctx(ghOk({ status: 1, stderr: "none of the git remotes point to a known GitHub host" })))
+          .status,
+        "skip"
+      );
+    });
+  });
+
+  test("doctorCommand: text vs --json output and exit codes", () => {
+    makeHealthyProject(tmp);
+    const capture = () => {
+      const out = { text: "", write: (s) => (out.text += s) };
+      return out;
+    };
+    const deps = { hasCommand: ALL_TOOLS, run: ghOk(), homeDir: tmp };
+
+    let stdout = capture();
+    assert.equal(doctorCommand([tmp], { stdout, ...deps }), 0);
+    assert.match(stdout.text, /✓ git: found/);
+    assert.match(stdout.text, /0 fail/);
+
+    fs.rmSync(path.join(tmp, ".specify"), { recursive: true });
+    stdout = capture();
+    assert.equal(doctorCommand(["--json", tmp], { stdout, ...deps }), 1);
+    const report = JSON.parse(stdout.text);
+    assert.equal(report.ok, false);
+    assert.equal(report.summary.fail, 1);
+    assert.equal(byId(report, "speckit.specify-dir").status, "fail");
+
+    assert.throws(() => doctorCommand(["--nope"], { stdout: capture(), ...deps }));
+    assert.throws(() => doctorCommand([path.join(tmp, "missing")], { stdout: capture(), ...deps }), /Not a directory/);
+  });
+
+  test("makeHasCommand finds executables on PATH only", () => {
+    const bin = path.join(tmp, "bin");
+    writeFile(bin, "mytool", "#!/bin/sh\n");
+    fs.chmodSync(path.join(bin, "mytool"), 0o755);
+    writeFile(bin, "notexec", "x");
+    const has = makeHasCommand({ PATH: bin }, "linux");
+    assert.equal(has("mytool"), true);
+    assert.equal(has("notexec"), false);
+    assert.equal(has("missing"), false);
+  });
+
+  test("CLI: doctor --json on a fresh scaffold exits 1 and prints valid JSON", () => {
+    makeHealthyProject(tmp);
+    fs.rmSync(path.join(tmp, ".specify"), { recursive: true });
+    let stdout = "";
+    let status = 0;
+    try {
+      // Empty PATH except node's dir → gh is absent, so no network call is attempted
+      stdout = execFileSync(process.execPath, [BIN, "doctor", "--json", tmp], {
+        encoding: "utf-8",
+        env: { PATH: path.dirname(process.execPath), HOME: tmp },
+      });
+    } catch (err) {
+      status = err.status;
+      stdout = err.stdout;
+    }
+    assert.equal(status, 1);
+    const report = JSON.parse(stdout);
+    assert.equal(byId(report, "speckit.specify-dir").status, "fail");
+    assert.equal(byId(report, "guard.branch-protection").status, "skip");
   });
 });
