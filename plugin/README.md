@@ -15,7 +15,10 @@ Chế độ này chỉ cài **4 subagent + 1 command** vào Claude Code của b�
 
 Sau khi cài, các agent + command của plugin sẽ khả dụng ngay trong Claude Code:
 - 4 subagent: `design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`
-- 1 command: `/design-to-code`
+- 2 command: `/design-to-code`, `/qa-sheet`
+
+> `/qa-sheet` cần script `.claude/scripts/qa_sheet.py` trong repo dự án (plugin không cài script) —
+> copy file đó từ repo aspec-kit vào dự án trước khi dùng.
 
 ## Bạn cần chuẩn bị thủ công (nếu dùng chế độ plugin)
 

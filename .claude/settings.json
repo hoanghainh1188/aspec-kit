@@ -13,7 +13,9 @@
       "Bash(git branch)",
       "Bash(git checkout -b *)",
       "Write(docs/intake/**)",
-      "Write(docs/04-decisions/**)"
+      "Write(docs/04-decisions/**)",
+      "Write(docs/qa/**)",
+      "Bash(python3 .claude/scripts/qa_sheet.py *)"
     ],
     "ask": [
       "Edit(src/**)",

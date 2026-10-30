@@ -1,0 +1,2 @@
+# CSV 質問票: giữ nguyên byte (UTF-8 BOM + CRLF cho Excel) — không cho git đổi line ending
+docs/qa/*.csv -text

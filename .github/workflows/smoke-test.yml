@@ -22,6 +22,8 @@ jobs:
           test -f .claude/agents/glossary-steward.md
           test -f .claude/hooks/format.sh
           test -f .claude/commands/design-to-code.md
+          test -f .claude/commands/qa-sheet.md
+          test -f .claude/scripts/qa_sheet.py
           test -f docs/00-glossary.md
           test -f docs/05-lessons.md
           test -f docs/CONSTITUTION_APPEND.md
@@ -35,6 +37,15 @@ jobs:
 
       - name: Kiểm tra nội dung template (link/frontmatter/step/mermaid)
         run: python3 .github/scripts/check-template.py
+
+      - name: Test script 質問票 (qa_sheet.py) + CSV mẫu khớp sheet mẫu
+        run: |
+          python3 -m unittest discover -s .claude/scripts -v
+          if [ -f docs/qa/000-example-reservation.md ]; then
+            cp docs/qa/000-example-reservation.csv /tmp/qa-expected.csv
+            python3 .claude/scripts/qa_sheet.py export docs/qa/000-example-reservation.md
+            cmp docs/qa/000-example-reservation.csv /tmp/qa-expected.csv
+          fi
 
       - name: Kiểm tra shell script hợp lệ (dry run)
         run: |

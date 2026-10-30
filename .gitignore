@@ -14,3 +14,6 @@ build/
 # - .specify/          (constitution + template)
 # - .claude/agents/    (subagent config)
 # - .claude/commands/  (slash command)
+
+# Python cache (qa_sheet.py test)
+__pycache__/

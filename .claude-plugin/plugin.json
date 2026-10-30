@@ -13,7 +13,8 @@
     "design-driven"
   ],
   "commands": [
-    "./.claude/commands/design-to-code.md"
+    "./.claude/commands/design-to-code.md",
+    "./.claude/commands/qa-sheet.md"
   ],
   "agents": [
     "./.claude/agents/design-intake.md",
