@@ -71,13 +71,17 @@ vẫn là source of truth, DB chỉ là cache dẫn xuất.
 ## Cách chạy pipeline sinh code từ design
 Gõ `/design-to-code` trong Claude Code, cung cấp đường dẫn tài liệu và link Figma khi được hỏi.
 
-**Mô hình chạy:** `/design-to-code` là một *runbook điều phối*, KHÔNG tự gọi được các slash command
-`/speckit-*` (Claude Code không cho command gọi command). Vì vậy:
-- Bước dùng **subagent** (`design-intake`, `code-reviewer`) → command tự gọi qua Task tool.
-- Bước dùng **Spec Kit** (`/speckit-specify|clarify|plan|tasks|analyze|implement`) → command in ra
-  lệnh chính xác để **bạn tự dán và chạy**, rồi dừng chờ bạn báo xong.
+**Mô hình chạy:** `/design-to-code` là một *runbook điều phối*. Skill Spec Kit trong `.claude/skills/speckit-*`
+(do `bootstrap.sh` sinh) cho phép model tự gọi (`disable-model-invocation: false`), nên:
+- Bước dùng **subagent** (`design-intake`, `code-reviewer`, …) → command tự gọi qua Task tool.
+- Bước dùng **Spec Kit** (`speckit-specify|clarify|plan|tasks|analyze|implement`) → command **tự gọi qua
+  Skill tool**, rồi **dừng cho bạn review** artifact. clarify vẫn tương tác (bạn trả lời câu hỏi); implement
+  chỉ chạy sau khi bạn duyệt analyze.
+- **Fallback [HANDOFF]:** nếu skill thiếu/bị chặn (VD bản Spec Kit mới đặt `disable-model-invocation: true`,
+  hoặc bạn từ chối quyền) → command in lệnh `/speckit-*` để **bạn tự dán và chạy**, rồi dừng chờ.
+  Bằng chứng + lý do: `docs/04-decisions/2026-10-31-runbook-auto-invoke-speckit.md`.
 
-Trình tự: **nạp memory** → design-intake → [handoff] specify → clarify → plan → tasks → analyze →
+Trình tự: **nạp memory** → design-intake → specify → clarify → plan → tasks → analyze →
 implement → code-reviewer → glossary-steward → security-reviewer → **test gate** → **deploy**.
 Dừng xin xác nhận ở mọi checkpoint.
 

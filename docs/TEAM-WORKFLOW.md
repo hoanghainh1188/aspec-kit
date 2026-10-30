@@ -146,7 +146,7 @@ vùng DÙNG CHUNG (đi ngang mọi làn — nơi drift + conflict sống):
 | Cô lập `src/features/<slug>/` (mục 4) | ✅ đụng file code | — | Quy ước + review |
 | Branch ngắn + merge sớm | ✅ giảm cửa sổ đụng | ✅ giảm cửa sổ lệch | Kỷ luật team |
 | Rebase `main` hằng ngày (mục 6) | ✅ đụng sớm, dễ gỡ | ✅ hút glossary/constitution mới | *Require branches up to date* (branch protection) |
-| Chạy lại `/speckit-analyze` (mục 6) | — | ✅ bắt code/spec lệch rule/term mới | Runbook `/design-to-code` bước 8 |
+| Chạy lại `/speckit-analyze` (mục 6) | — | ✅ bắt code/spec lệch rule/term mới | Runbook `/design-to-code` bước 9 |
 | Gác cổng glossary/constitution (mục 7) | — | ✅ chặn đổi nghĩa lung tung | **CODEOWNERS + branch protection** (setup load-bearing) |
 | `glossary-steward` (pipeline) | — | ✅ bắt term lệch trước merge | Runbook `/design-to-code` bước 11 |
 
