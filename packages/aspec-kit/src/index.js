@@ -46,6 +46,8 @@ export const SAMPLE_FEATURE_PATHS = Object.freeze([
   "docs/04-decisions/2026-01-01-approval-vs-confirm.md",
   "docs/02-detail-design/example-reservation",
   "docs/changes/2026-10-31-example-reservation.md",
+  "docs/qa/000-example-reservation.md",
+  "docs/qa/000-example-reservation.csv",
 ]);
 
 /** Shared files that reference the sample feature and must be filtered line-by-line. */

@@ -11,6 +11,9 @@ tránh trùng slug khi nhiều feature song song). Gồm:
 
 File này commit vào Git — bằng chứng agent đã hiểu đúng tài liệu Nhật tại thời điểm sinh spec.
 
+Ambiguity chỉ khách trả lời được → `/qa-sheet <NNN>-<slug>` sinh 質問票 `docs/qa/<NNN>-<slug>.md` + `.csv`
+(mỗi ambiguity = 1 câu, ID `Q-<NNN>-<ii>` theo thứ tự trong mục Ambiguities). Xem [`docs/qa/README.md`](../qa/README.md).
+
 ---
 
 ## Handoff checklist — chỉ dùng khi BUỘC phải chuyển tay giữa chừng

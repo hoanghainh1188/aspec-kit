@@ -132,7 +132,8 @@ my-project/
 │   ├── settings.json              Permission boundaries (deny -> ask -> allow)
 │   ├── agents/                    5 subagents (design-intake, code-reviewer, security-reviewer, glossary-steward, impact-analyzer)
 │   ├── hooks/                     Format-on-save hook
-│   └── commands/                  /design-to-code (orchestration) + /design-change (仕様変更 impact)
+│   ├── commands/                  /design-to-code (orchestration), /design-change (仕様変更 impact), /qa-sheet (質問票)
+│   └── scripts/                   qa_sheet.py — deterministic CSV/ingest for /qa-sheet
 ├── docs/
 │   ├── 00-glossary.md              Single source of truth for JP / VI / EN business terms
 │   ├── 01-basic-design/            基本設計 directly from client (read-only)
@@ -140,6 +141,7 @@ my-project/
 │   ├── 03-ui/                      Figma links and visual snapshots
 │   ├── 04-decisions/               Decisions from /speckit-clarify (INDEX.md)
 │   ├── 05-lessons.md               Technical gotchas and project lessons
+│   ├── qa/                         質問票 (Q&A sheets) for the client, from /qa-sheet
 │   └── CONSTITUTION_APPEND.md      Recommended constitution articles for JP projects
 ├── src/                            Application source code (src/features/<slug>/)
 └── tests/                          Automated test suites

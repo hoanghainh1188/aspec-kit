@@ -40,6 +40,11 @@ giúp mọi agent nhất quán ngay từ lượt gọi đầu tiên>
   lệnh Spec Kit cần chạy lại, và tóm tắt 影響範囲 tiếng Nhật gửi khách. Chạy mỗi khi `docs/01-03` có
   version mới, TRƯỚC khi re-run pipeline.
 
+- **`docs/qa/`** — 質問票 (bảng hỏi khách) do `/qa-sheet` sinh từ mục *Ambiguities* của intake:
+  `<NNN>-<slug>.md` (nguồn, 敬語) + `.csv` (UTF-8 BOM cho Excel, script sinh — không sửa tay). ID câu hỏi
+  `Q-<NNN>-<ii>` ổn định, không đánh lại số. Khách trả lời → `/qa-sheet --ingest <file>` ghi vào
+  `docs/04-decisions/` + `INDEX.md`. Xem `docs/qa/README.md`.
+
 - **`specs/<feature>/`** — do Spec Kit sinh (spec.md, plan.md, tasks.md). CÓ THỂ tái sinh, không chỉnh tay.
   Nếu sai, sửa docs/ gốc hoặc bổ sung docs/04-decisions/ rồi chạy lại pipeline.
 
@@ -60,7 +65,7 @@ trước. Nên memory phải **externalize thành file commit vào Git**. Có 5 
 |---|---|---|
 | `.specify/memory/constitution.md` | Nguyên tắc bất biến | `/speckit-constitution` + PR steward |
 | `docs/00-glossary.md` | Thuật ngữ (semantic) | append trong branch; SỬA → PR steward |
-| `docs/04-decisions/` + `INDEX.md` | Quyết định ambiguity | `/speckit-clarify` → runbook ghi |
+| `docs/04-decisions/` + `INDEX.md` | Quyết định ambiguity | `/speckit-clarify` → runbook ghi; `/qa-sheet --ingest` (câu trả lời của khách) |
 | `docs/05-lessons.md` | Gotcha kỹ thuật | append trong branch khi gặp |
 | `CLAUDE.md` | Quy ước dự án (auto-load) | PR |
 
