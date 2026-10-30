@@ -27,18 +27,22 @@ jobs:
       - name: Upgrade to latest npm (required for native OIDC Trusted Publishing)
         run: npm install -g npm@latest
 
-      - name: Sync package.json version with git tag
+      - name: Verify git tag matches committed versions
         run: |
-          # Extract version number by stripping the leading 'v' (e.g. v0.1.1 -> 0.1.1)
-          TAG_VERSION=${GITHUB_REF_NAME#v}
-          echo "Setting package.json version to: $TAG_VERSION"
-          npm version "$TAG_VERSION" --no-git-tag-version --prefix packages/aspec-kit
+          # The CLI downloads its template from tag v<package.json version>, so the tagged
+          # commit itself must carry that version. Fail instead of patching it in CI only.
+          # Fix locally: node .github/scripts/sync-version.mjs <version> → commit → re-tag.
+          node .github/scripts/sync-version.mjs --check "$GITHUB_REF_NAME"
 
       - name: Verify template integrity before release
         run: |
           python3 .github/scripts/check-template.py
           bash -n bootstrap.sh
           bash -n .claude/hooks/format.sh
+
+      - name: Run CLI tests
+        working-directory: packages/aspec-kit
+        run: npm test
 
       - name: Publish to npmjs.com via OIDC Trusted Publisher
         run: |

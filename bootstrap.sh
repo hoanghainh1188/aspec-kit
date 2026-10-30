@@ -9,6 +9,17 @@
 
 set -euo pipefail
 
+# Spec Kit version to install. Pin it for reproducible setups across the team, e.g.:
+#   SPEC_KIT_REF=v0.0.90 bash bootstrap.sh
+# Default `main` = always latest (the drift guard below warns if skill names changed).
+SPEC_KIT_REF="${SPEC_KIT_REF:-main}"
+if ! [[ "$SPEC_KIT_REF" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
+  echo "SPEC_KIT_REF không hợp lệ: '$SPEC_KIT_REF'"
+  exit 1
+fi
+SPEC_KIT_SOURCE="git+https://github.com/github/spec-kit.git@${SPEC_KIT_REF}"
+SPEC_KIT_INIT_RAN=0
+
 echo "==> Kiểm tra công cụ cần thiết..."
 command -v git >/dev/null 2>&1 || { echo "Cần cài git trước."; exit 1; }
 command -v uvx >/dev/null 2>&1 || command -v pipx >/dev/null 2>&1 || {
@@ -20,7 +31,10 @@ command -v uvx >/dev/null 2>&1 || command -v pipx >/dev/null 2>&1 || {
 if [ -d .specify ]; then
   echo "==> .specify/ đã tồn tại — bỏ qua specify init."
 else
-  echo "==> Đang chạy specify init ..."
+  echo "==> Đang chạy specify init (spec-kit ref: ${SPEC_KIT_REF}) ..."
+  if [ "$SPEC_KIT_REF" = "main" ]; then
+    echo "    (Gợi ý: pin version cho cả team bằng SPEC_KIT_REF=<tag> bash bootstrap.sh)"
+  fi
   # Backup .claude trước, vì specify init có thể ghi đè
   if [ -d .claude ]; then
     cp -r .claude .claude.template-backup
@@ -29,10 +43,11 @@ else
   # --force: bắt buộc khi init vào thư mục đã có file (template luôn không rỗng),
   # nếu thiếu, specify sẽ hỏi xác nhận và treo dưới `set -euo pipefail`.
   if command -v uvx >/dev/null 2>&1; then
-    uvx --from git+https://github.com/github/spec-kit.git specify init . --force --integration claude
+    uvx --from "$SPEC_KIT_SOURCE" specify init . --force --integration claude
   else
-    pipx run --spec git+https://github.com/github/spec-kit.git specify init . --force --integration claude
+    pipx run --spec "$SPEC_KIT_SOURCE" specify init . --force --integration claude
   fi
+  SPEC_KIT_INIT_RAN=1
 
   # Merge lại: nếu specify init ghi đè settings.json / agents / commands của template,
   # khôi phục từ backup rồi merge command speckit.* vào
@@ -52,7 +67,7 @@ fi
 #     (Tên branch vẫn là NNN-<slug> = số issue, cho PR/traceability — 2 lớp số khác nhau.)
 if [ -d .specify ]; then
   if command -v python3 >/dev/null 2>&1; then
-    python3 - <<'PY'
+    SPEC_KIT_REF="$SPEC_KIT_REF" SPEC_KIT_INIT_RAN="$SPEC_KIT_INIT_RAN" python3 - <<'PY'
 import json, os
 p = ".specify/init-options.json"
 data = {}
@@ -63,6 +78,9 @@ if os.path.exists(p):
     except Exception:
         data = {}
 data["feature_numbering"] = "timestamp"
+# Record which spec-kit ref generated .specify/ (helps diagnose drift across the team)
+if os.environ.get("SPEC_KIT_INIT_RAN") == "1":
+    data["spec_kit_ref"] = os.environ.get("SPEC_KIT_REF", "main")
 with open(p, "w") as f:
     json.dump(data, f, indent=2)
 print(f"==> Đã đặt feature_numbering=timestamp trong {p}")

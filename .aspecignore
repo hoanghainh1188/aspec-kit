@@ -1,0 +1,20 @@
+# .aspecignore — paths in this kit repo that the CLI must NOT copy into scaffolded projects.
+# One path per line, relative to repo root. Directories exclude everything beneath them.
+# The CLI also has a built-in default list (packages/aspec-kit/src/index.js → DEFAULT_EXCLUDES);
+# entries here are merged with it, so the list can evolve together with the pinned template tag.
+
+# Packaging & release (kit-only)
+packages
+.github/workflows/publish-npm.yml
+.github/workflows/kit-ci.yml
+.github/scripts/sync-version.mjs
+
+# Claude Code plugin distribution (kit-only)
+.claude-plugin
+plugin
+
+# Kit marketing / meta (scaffolded project gets its own README stub)
+assets
+README.md
+CONTRIBUTING.md
+LICENSE

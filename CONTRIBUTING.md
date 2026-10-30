@@ -33,3 +33,26 @@ python3 -c "import json; json.load(open('.claude/settings.json'))"
 python3 -c "import json; json.load(open('.claude-plugin/plugin.json'))"
 python3 -c "import json; json.load(open('.claude-plugin/marketplace.json'))"
 ```
+
+Nếu sửa CLI (`packages/aspec-kit/`) — tương đương workflow `kit-ci`:
+
+```bash
+(cd packages/aspec-kit && npm test)                 # unit + e2e (dùng template local, không cần mạng)
+node .github/scripts/sync-version.mjs --check       # version package.json == plugin.json
+npx --yes vitest@3 run src/features/example-reservation   # test của feature mẫu
+```
+
+## Phát hành phiên bản mới
+
+CLI tải template từ tag `v<version>` → commit được tag **phải** mang đúng version đó.
+
+```bash
+node .github/scripts/sync-version.mjs 0.2.0   # cập nhật package.json + plugin.json
+git commit -am "chore: release v0.2.0"
+git tag v0.2.0 && git push --follow-tags      # publish-npm sẽ fail nếu tag ≠ version
+```
+
+## File chỉ thuộc về kit
+
+Các file phục vụ đóng gói/phát hành (workflow publish, `packages/`, plugin metadata…) được liệt kê trong
+`.aspecignore` để CLI **không** copy sang dự án người dùng. Thêm file kit-only mới → nhớ thêm vào đây.
