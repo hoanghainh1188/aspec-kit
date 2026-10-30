@@ -1,6 +1,6 @@
 # aspec-kit — Chế độ Claude Code Plugin
 
-Chế độ này chỉ cài **5 subagent + 2 command** vào Claude Code của bạn, KHÔNG tạo cấu trúc thư mục `docs/`, không chạy `specify init`. Phù hợp khi bạn muốn dùng bộ agent cho **nhiều dự án có sẵn**.
+Chế độ này chỉ cài **5 subagent + 3 command** vào Claude Code của bạn, KHÔNG tạo cấu trúc thư mục `docs/`, không chạy `specify init`. Phù hợp khi bạn muốn dùng bộ agent cho **nhiều dự án có sẵn**.
 
 ## Cài đặt
 
@@ -17,8 +17,9 @@ Sau khi cài, các agent + command của plugin sẽ khả dụng ngay trong Cla
 - 5 subagent: `design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`, `impact-analyzer`
 - 3 command: `/design-to-code`, `/design-change` (phân tích tác động 仕様変更), `/qa-sheet` (質問票)
 
-> `/qa-sheet` cần script `.claude/scripts/qa_sheet.py` trong repo dự án (plugin không cài script) —
-> copy file đó từ repo aspec-kit vào dự án trước khi dùng.
+> Plugin **không cài** thư mục `.claude/scripts/`. `/qa-sheet` cần `.claude/scripts/qa_sheet.py` trong
+> repo dự án — copy file đó từ repo aspec-kit vào dự án trước khi dùng. Để chuyển 詳細設計 Excel/PDF sang
+> Markdown, dùng `npx @hoanghainh/aspec-kit convert <file>` (CLI tự mang script, cần `uv`).
 
 ## Bạn cần chuẩn bị thủ công (nếu dùng chế độ plugin)
 

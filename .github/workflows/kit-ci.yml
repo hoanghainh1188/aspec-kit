@@ -65,6 +65,13 @@ jobs:
         with:
           node-version: '22'
       - run: node .github/scripts/sync-version.mjs --check
+      # A branch merge once shipped raw conflict markers in the npm README (fixed in the README-consolidation PR)
+      - name: No unresolved merge-conflict markers
+        run: |
+          if git grep -nE '^(<<<<<<<|>>>>>>>)( |$)' -- . ':!*.png'; then
+            echo "::error::Unresolved merge-conflict markers found"
+            exit 1
+          fi
 
   sample-feature:
     name: Sample feature tests (Article W evidence)
