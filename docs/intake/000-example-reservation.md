@@ -3,6 +3,7 @@
 > **File thật** đặt tên `docs/intake/<NNN>-<slug>.md` (VD issue #42 → `042-user-reservation.md`).
 > Xoá cả bộ file mẫu:
 > `docs/intake/000-example-reservation.md`, `docs/04-decisions/2026-01-01-approval-vs-confirm.md`,
+> `docs/qa/000-example-reservation.md` + `.csv` (質問票 mẫu),
 > thư mục `specs/000-example-reservation/`, và `src/features/example-reservation/`.
 
 # Intake — 予約承認 (Duyệt đặt chỗ) · feature `000-example-reservation`
