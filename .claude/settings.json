@@ -15,9 +15,21 @@
       "Write(docs/intake/**)",
       "Write(docs/04-decisions/**)",
       "Write(docs/qa/**)",
-      "Bash(python3 .claude/scripts/qa_sheet.py *)"
+      "Bash(python3 .claude/scripts/qa_sheet.py *)",
+      "Skill(speckit-specify)",
+      "Skill(speckit-specify *)",
+      "Skill(speckit-clarify)",
+      "Skill(speckit-clarify *)",
+      "Skill(speckit-plan)",
+      "Skill(speckit-plan *)",
+      "Skill(speckit-tasks)",
+      "Skill(speckit-tasks *)",
+      "Skill(speckit-analyze)",
+      "Skill(speckit-analyze *)"
     ],
     "ask": [
+      "Skill(speckit-implement)",
+      "Skill(speckit-implement *)",
       "Edit(src/**)",
       "Write(src/**)",
       "Edit(.specify/memory/**)",

@@ -163,7 +163,7 @@ p.write_text('\n'.join(lines) + '\n')
    - `docs/03-ui/<slug>/figma-links.md` — Figma nodes and reference screenshots.
    *(Note: For binary `.docx/.xlsx/.pdf` files, export text/markdown copies alongside the originals for direct tool parsing).*
 3. **Execute `/design-to-code`** in Claude Code, providing document paths when prompted.
-4. At each **[HANDOFF]** step, copy and run the precise `/speckit-*` command output by Claude.
+4. Claude runs each Spec Kit step (`speckit-specify|clarify|plan|tasks|analyze|implement`) itself via the **Skill tool** and pauses for you to review the artifact. Answer `clarify` questions in chat. Only if a skill is missing or blocked does it fall back to **[HANDOFF]**: copy and run the `/speckit-*` command it prints. See [`docs/04-decisions/2026-10-31-runbook-auto-invoke-speckit.md`](docs/04-decisions/2026-10-31-runbook-auto-invoke-speckit.md).
 5. Review checkpoints at every **[PAUSE]** (intake review, analyze gate, test gate, deployment).
 6. **Ambiguities that only the client can answer** → run `/qa-sheet <NNN>-<slug>` to turn the intake's
    *Ambiguities* into a business-polite (敬語) 質問票 `docs/qa/<NNN>-<slug>.md` + Excel-ready CSV
@@ -180,15 +180,15 @@ flowchart TD
     B2 --> C["Create git branch NNN-feature"]:::auto
     C --> D["design-intake reads docs → docs/intake/"]:::auto
     D --> E{"PAUSE — Review intake<br/>prompt & ambiguities"}:::stop
-    E --> F["/speckit-specify — prompt from intake"]:::handoff
+    E --> F["speckit-specify (Skill) — prompt from intake<br/>PAUSE review spec"]:::skill
     F --> G{"Ambiguities detected?"}:::stop
-    G -- Yes --> H["/speckit-clarify → docs/04-decisions/"]:::handoff
-    G -- No --> I["/speckit-plan"]:::handoff
+    G -- Yes --> H["speckit-clarify (Skill, you answer)<br/>→ docs/04-decisions/"]:::skill
+    G -- No --> I["speckit-plan (Skill)<br/>PAUSE review plan"]:::skill
     H --> I
-    I --> J["/speckit-tasks"]:::handoff
-    J --> K{"PAUSE — /speckit-analyze<br/>any warnings?"}:::stop
+    I --> J["speckit-tasks (Skill)<br/>PAUSE review tasks"]:::skill
+    J --> K{"PAUSE — speckit-analyze (Skill)<br/>any warnings?"}:::stop
     K -- Yes, fix spec/plan/tasks --> F
-    K -- No --> L["/speckit-implement → generate code"]:::handoff
+    K -- No --> L["speckit-implement (Skill, after your OK)<br/>→ generate code"]:::skill
     L --> M{"code-reviewer<br/>any Blocking issues?"}:::auto
     M -- Yes --> L
     M -- No --> Q["glossary-steward<br/>verify terms vs glossary"]:::auto
@@ -201,14 +201,14 @@ flowchart TD
 
     classDef user fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
     classDef auto fill:#dcfce7,stroke:#15803d,color:#14532d
-    classDef handoff fill:#fef9c3,stroke:#a16207,color:#713f12
+    classDef skill fill:#fef9c3,stroke:#a16207,color:#713f12
     classDef stop fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
 ```
 
 **Step Categories:**
 - 🟦 **User Action**: Manual inputs and reviews.
 - 🟩 **[AUTO]**: Claude executes automatically (git branch, calling subagents).
-- 🟨 **[HANDOFF]**: User pastes and runs the `/speckit-*` command printed by Claude.
+- 🟨 **[SKILL]**: Claude invokes the Spec Kit skill itself via the Skill tool, then pauses for your review. Fallback **[HANDOFF]** (skill missing/blocked): you paste and run the `/speckit-*` command Claude prints.
 - 🟥 **[PAUSE]**: Mandatory approval gate.
 
 ---
