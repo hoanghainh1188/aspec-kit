@@ -40,10 +40,13 @@ pnpm create @hoanghainh/aspec-kit my-project
 npx @hoanghainh/aspec-kit init [project-directory] [options]
 # or
 npx @hoanghainh/aspec-kit [project-directory] [options]
+# upgrade an existing project
+npx @hoanghainh/aspec-kit update [project-directory] [--to <ref>] [--dry-run]
 ```
 
 ### Commands
 - `init [dir]`: Scaffolds a new project (pass `.` to initialize in the current directory).
+- `update [dir]`: Upgrades the kit-owned files of an existing project (see [Updating a project](#updating-a-project)).
 - `doctor [dir] [--json]`: Health check of an existing project's environment and guardrails
   (see [Health check](#health-check-aspec-kit-doctor)).
 
@@ -74,6 +77,41 @@ npx @hoanghainh/aspec-kit [project-directory] [options]
   `README`/`LICENSE`/`CONTRIBUTING` are not copied (see `.aspecignore`). A project `README.md` stub is
   generated instead (only if none exists).
 - Post-copy customization (CODEOWNERS, sample cleanup) only touches files created by the current run.
+- **Version manifest**: `init` writes `.aspec-kit.json` (template ref, CLI version, steward and a
+  sha256 of every scaffolded file). Commit it — `aspec-kit update` relies on it.
+
+## Updating a project
+
+Projects keep receiving fixes to agents, runbooks, hooks and CI with:
+
+```bash
+npx @hoanghainh/aspec-kit update --dry-run     # preview
+npx @hoanghainh/aspec-kit update               # apply (template v<cli-version>)
+npx @hoanghainh/aspec-kit update --to v0.3.0   # or a specific tag/branch
+```
+
+For every kit-owned file the CLI compares the hash recorded in `.aspec-kit.json` (base), the file on
+disk (yours) and the new template (theirs):
+
+| Situation | Result |
+|---|---|
+| You did not change the file | Overwritten with the new template |
+| Only you changed it | Kept as-is |
+| Both you and the template changed it | **Conflict** — your file is kept, the new version is written to `<file>.aspec-new` |
+| New in the template | Added |
+| Removed from the template | Deleted if you never changed it, otherwise kept (no longer kit-managed) |
+
+Then `.aspec-kit.json` is refreshed. Resolve each conflict by merging `<file>.aspec-new` into `<file>`
+and deleting the `.aspec-new` file. `--dry-run` prints the plan and writes nothing.
+
+**Never touched:** client design docs (`docs/01-*`, `docs/02-*`, `docs/03-*`), `docs/00-glossary.md`,
+`docs/04-decisions/`, `docs/05-lessons.md`, `docs/intake/`, `specs/` and `src/`.
+
+> Projects created before `.aspec-kit.json` existed have no recorded base, so every file that differs
+> from the new template is treated as locally modified (reported as a conflict with an `.aspec-new`
+> copy). After the first update the manifest exists and later updates are fully automatic.
+> Note: `update` is now a command, so `npx @hoanghainh/aspec-kit update` no longer scaffolds into a
+> directory named `update` (use `init update` for that).
 
 ### Health check (`aspec-kit doctor`)
 

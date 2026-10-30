@@ -6,6 +6,7 @@ import readline from "node:readline/promises";
 import { execFileSync } from "node:child_process";
 import https from "node:https";
 import { parseArgs } from "node:util";
+import { MANIFEST_FILE, buildManifest, hashProjectFiles, readManifest, writeManifest } from "./manifest.js";
 import { doctorCommand } from "./commands/doctor.js";
 
 const GITHUB_OWNER_REPO = "hoanghainh1188/aspec-kit";
@@ -13,7 +14,7 @@ const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER_REPO}.git`;
 const TARBALL_BASE_URL = `https://codeload.github.com/${GITHUB_OWNER_REPO}/tar.gz`;
 
 // Placeholder used in the template's .github/CODEOWNERS
-const CODEOWNERS_PLACEHOLDER = "@your-lead-handle";
+export const CODEOWNERS_PLACEHOLDER = "@your-lead-handle";
 // Default steward value meaning "user did not provide one"
 const DEFAULT_STEWARD = "@your-handle";
 
@@ -79,9 +80,12 @@ const HELP_TEXT = `Usage:
   npx @hoanghainh/aspec-kit init [project-directory] [options]
   npx @hoanghainh/aspec-kit [project-directory] [options]
   npm init @hoanghainh/aspec-kit [project-directory] [options]
+  npx @hoanghainh/aspec-kit update [project-directory] [--to <ref>] [--dry-run]
 
 Commands:
   init [dir]             Initialize a new aspec-kit project (use '.' for current dir)
+  update [dir]           Upgrade kit-owned template files of an existing project
+                         (run 'aspec-kit update --help' for details)
   doctor [dir] [--json]  Check environment & guardrails of a project (exit 1 on failure)
 
 Options:
@@ -418,7 +422,7 @@ async function fetchRef(ref) {
  * Resolve the template source directory.
  * Returns { dir, ref, cleanup }. `cleanup` must be called when done.
  */
-async function fetchTemplate({ templateRef, cliVersion }) {
+export async function fetchTemplate({ templateRef, cliVersion }) {
   // Dev/CI escape hatch: use a local checkout instead of downloading
   const localDir = process.env.ASPEC_KIT_TEMPLATE_DIR;
   if (localDir) {
@@ -472,6 +476,10 @@ function printFileList(title, files, limit = 15) {
 export async function main(argv = process.argv.slice(2)) {
   const pkgPath = new URL("../package.json", import.meta.url);
   const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+  if (argv[0] === "update") {
+    const { runUpdate } = await import("./commands/update.js");
+    return runUpdate(argv.slice(1), { cliVersion: pkg.version });
+  }
   if (argv[0] === "doctor") {
     process.exitCode = doctorCommand(argv.slice(1));
     return;
@@ -556,7 +564,8 @@ export async function main(argv = process.argv.slice(2)) {
 
     // 5. Customize project configuration
     console.log("==> Customizing project files...");
-    if (applySteward(targetDir, steward, ownedFiles)) {
+    const stewardApplied = applySteward(targetDir, steward, ownedFiles);
+    if (stewardApplied) {
       console.log(`✓ Updated .github/CODEOWNERS with ${steward}`);
     } else if (steward !== DEFAULT_STEWARD) {
       warn(".github/CODEOWNERS was not created by this run — steward not applied.");
@@ -571,6 +580,24 @@ export async function main(argv = process.argv.slice(2)) {
     if (writeProjectReadme(targetDir, projectName, pkg.version)) {
       console.log("✓ Created README.md");
     }
+
+    // Record what was scaffolded so `aspec-kit update` can do a 3-way comparison later
+    let previous = null;
+    try {
+      previous = readManifest(targetDir);
+    } catch (err) {
+      warn(`Existing ${err.message} — it will be replaced.`);
+    }
+    writeManifest(
+      targetDir,
+      buildManifest({
+        templateRef: templateHandle.ref,
+        cliVersion: pkg.version,
+        steward: stewardApplied ? steward : previous?.steward ?? null,
+        files: { ...previous?.files, ...hashProjectFiles(targetDir, ownedFiles) },
+      })
+    );
+    console.log(`✓ Wrote ${MANIFEST_FILE}`);
 
     // 6. Initialize git repo if not already a git repository
     try {
