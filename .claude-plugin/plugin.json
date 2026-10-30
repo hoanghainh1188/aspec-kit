@@ -1,10 +1,17 @@
 {
   "name": "aspec-kit",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Hybrid pipeline for spec-driven development with Japanese design documents + Figma. Wraps GitHub Spec Kit with design-intake, code-reviewer, security-reviewer, and glossary-steward agents.",
   "author": "hoanghainh1188",
   "homepage": "https://github.com/hoanghainh1188/aspec-kit",
-  "keywords": ["spec-kit", "aspec-kit", "japanese", "brse", "figma", "design-driven"],
+  "keywords": [
+    "spec-kit",
+    "aspec-kit",
+    "japanese",
+    "brse",
+    "figma",
+    "design-driven"
+  ],
   "commands": [
     "./.claude/commands/design-to-code.md"
   ],
