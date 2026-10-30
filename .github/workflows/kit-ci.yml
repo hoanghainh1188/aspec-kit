@@ -33,9 +33,28 @@ jobs:
           cd "$RUNNER_TEMP/demo"
           test ! -e .github/workflows/publish-npm.yml
           test ! -e packages
+          test -f .claude/scripts/convert-design.py
           python3 .github/scripts/check-template.py
           bash -n bootstrap.sh
           echo "✓ Scaffolded project is valid"
+
+  converter:
+    name: Design converter tests (uv + Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      # PEP 723 inline deps (openpyxl, pdfplumber, reportlab) are resolved by uv itself
+      - name: Run converter tests
+        run: uv run --script packages/aspec-kit/test/convert/test_convert_design.py
+      - name: Convert the sample workbook through the CLI
+        run: |
+          mkdir -p "$RUNNER_TEMP/p/docs/02-detail-design/demo"
+          cp packages/aspec-kit/test/convert/fixtures/detail-design-sample.xlsx "$RUNNER_TEMP/p/docs/02-detail-design/demo/"
+          cd "$RUNNER_TEMP/p"
+          node "$GITHUB_WORKSPACE/packages/aspec-kit/bin/run.js" convert docs/02-detail-design/demo/detail-design-sample.xlsx
+          grep -q "| 1 | 予約者名 | 文字列 | 50 | ○ |" "docs/02-detail-design/demo/detail-design-sample__02_画面項目定義.md"
+          grep -q "Converted \`detail-design-sample.xlsx\`" docs/02-detail-design/demo/CHANGELOG.md
 
   versions:
     name: Version consistency

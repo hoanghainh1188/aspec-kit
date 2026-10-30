@@ -7,6 +7,8 @@ import { execFileSync } from "node:child_process";
 import https from "node:https";
 import { parseArgs } from "node:util";
 
+import { runConvert } from "./commands/convert.js";
+
 const GITHUB_OWNER_REPO = "hoanghainh1188/aspec-kit";
 const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER_REPO}.git`;
 const TARBALL_BASE_URL = `https://codeload.github.com/${GITHUB_OWNER_REPO}/tar.gz`;
@@ -77,6 +79,7 @@ const HELP_TEXT = `Usage:
 
 Commands:
   init [dir]             Initialize a new aspec-kit project (use '.' for current dir)
+  convert <file>         Convert a 詳細設計 .xlsx/.pdf to Markdown (needs uv; see 'convert --help')
 
 Options:
   -v, --version          Display CLI version
@@ -465,6 +468,10 @@ function printFileList(title, files, limit = 15) {
 export async function main(argv = process.argv.slice(2)) {
   const pkgPath = new URL("../package.json", import.meta.url);
   const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+  if (argv[0] === "convert") {
+    runConvert(argv.slice(1));
+    return;
+  }
   const opts = parseCliArgs(argv);
 
   if (opts.help) {

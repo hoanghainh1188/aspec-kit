@@ -13,6 +13,9 @@ Bạn đọc 3 loại input (basic design .docx/.xlsx/.pdf, detail design .docx/
 `Read` KHÔNG parse được file Office nhị phân (.docx/.xlsx/.pptx) hay .pdf. Cách đọc đúng:
 
 - Ưu tiên dùng **Skill tool** với skill `docx` / `xlsx` / `pdf` (nếu đã cài) để trích nội dung.
+- Với `.xlsx`/`.pdf`: nếu cạnh file gốc đã có bản `.md` do `aspec-kit convert` sinh (dòng đầu
+  `<!-- aspec-kit convert: source=... -->`), đọc bản đó. Nếu chưa có, đề nghị người dùng chạy
+  `uv run --script .claude/scripts/convert-design.py <file>` rồi đọc kết quả.
 - Nếu skill tương ứng không có sẵn, DỪNG và yêu cầu người dùng cung cấp bản export text/markdown
   của tài liệu (đặt cạnh file gốc trong cùng thư mục `docs/01-basic-design/<slug>/` — `<slug>` khớp
   branch `NNN-<slug>`). Không đoán
