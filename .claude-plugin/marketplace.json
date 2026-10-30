@@ -10,7 +10,8 @@
       "description": "Hybrid pipeline for spec-driven development from Japanese design docs (基本設計/詳細設計) + Figma. Wraps GitHub Spec Kit with design-intake, code-reviewer, security-reviewer, glossary-steward, and impact-analyzer (仕様変更 /design-change) agents.",
       "commands": [
         "./.claude/commands/design-to-code.md",
-        "./.claude/commands/design-change.md"
+        "./.claude/commands/design-change.md",
+        "./.claude/commands/qa-sheet.md"
       ],
       "agents": [
         "./.claude/agents/design-intake.md",

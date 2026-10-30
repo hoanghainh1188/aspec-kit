@@ -24,6 +24,11 @@ Production-ready greenfield project template and toolkit for **Claude Code**, sp
   - `glossary-steward`: Guards terminology fidelity across Japanese, Vietnamese, and English in code and specs.
   - `security-reviewer`: Specialized OWASP Top 10, secret detection, and PII audit pass.
   - `impact-analyzer`: Diffs two client design versions (仕様変更) and traces each change to the intake, spec ACs, tasks, source files, and tests it affects — driven by `/design-change`.
+- **BrSE Toolkit for Japanese Client Projects**: The daily chores around the client, built in:
+  - `/qa-sheet`: Turns intake ambiguities into a business-polite (敬語) 質問票 (`.md` + Excel-ready CSV) and records the client's answers in `docs/04-decisions/`.
+  - `/design-change`: 仕様変更 impact report: what to change and why, which `/speckit-*` steps to re-run, and a Japanese 影響範囲 summary for the client.
+  - `aspec-kit convert`: Converts 詳細設計 Excel/PDF into Markdown that agents can read, without touching the original.
+- **Maintainable Scaffold**: `aspec-kit update` pulls template fixes into existing projects with a 3-way merge, and `aspec-kit doctor` checks tools and guardrails (see [CLI Commands](#cli-commands)).
 - **5-Tier Git-Backed Project Memory**: Externalizes knowledge in Git files to eliminate AI context drift without database infrastructure overhead.
 - **Zero-Conflict Team Workflow**: Combines GitHub Issue IDs for branch naming (`NNN-<slug>`) and timestamp-based specification paths to prevent collision during parallel feature development.
 
@@ -59,6 +64,7 @@ npx @hoanghainh/aspec-kit update --dry-run   # preview; drop --dry-run to apply
 ```
 Files you edited are kept; if the template changed them too, the new version is written next to them
 as `<file>.aspec-new` for a manual merge (details: [`packages/aspec-kit/README.md`](packages/aspec-kit/README.md#updating-a-project)).
+All CLI commands are listed in [CLI Commands](#cli-commands).
 
 ### Method 2: Use as GitHub Template Repository
 
@@ -79,6 +85,19 @@ Ideal when you want to equip existing codebases with aspec-kit agents and slash 
 ```
 
 Installs the 5 subagents (`design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`, `impact-analyzer`) and the `/design-to-code`, `/design-change` and `/qa-sheet` commands into user scope (`~/.claude/`). See details in [`plugin/README.md`](plugin/README.md).
+
+---
+
+## CLI Commands
+
+The npm CLI has no dependencies and covers the whole lifecycle of a project. Full options are in [`packages/aspec-kit/README.md`](packages/aspec-kit/README.md).
+
+| Command | What it does |
+|---|---|
+| `npx @hoanghainh/aspec-kit init <dir>` | Scaffold a new project. Existing files are never overwritten without `--force`. |
+| `npx @hoanghainh/aspec-kit update [--dry-run] [--to <ref>]` | Pull template fixes into an existing project with a 3-way merge. Client docs, glossary, decisions, specs and `src/` are never touched. |
+| `npx @hoanghainh/aspec-kit doctor [--json]` | Check tools, Spec Kit skills, CODEOWNERS, formatter and branch protection. Prints a fix hint for each problem. |
+| `npx @hoanghainh/aspec-kit convert <file.xlsx\|pdf>` | Convert a 詳細設計 workbook or PDF into Markdown next to the original. Requires [uv](https://docs.astral.sh/uv/). |
 
 ---
 
@@ -103,7 +122,8 @@ Installs the 5 subagents (`design-intake`, `code-reviewer`, `security-reviewer`,
 │   │   ├── design-change.md       /design-change <old> <new>: 仕様変更 impact report
 │   │   └── qa-sheet.md            質問票: intake ambiguities -> client Q&A sheet, answers -> decisions
 │   └── scripts/
-│       └── qa_sheet.py            Deterministic part of /qa-sheet (validate, CSV with UTF-8 BOM, ingest)
+│       ├── qa_sheet.py            Deterministic part of /qa-sheet (validate, CSV with UTF-8 BOM, ingest)
+│       └── convert-design.py      詳細設計 .xlsx/.pdf -> Markdown (run via uv; used by `aspec-kit convert`)
 ├── docs/
 │   ├── 00-glossary.md              Single source of truth for JP / VI / EN business terms
 │   ├── 01-basic-design/            基本設計 directly from client (read-only)
@@ -177,21 +197,19 @@ p.write_text('\n'.join(lines) + '\n')
    - `docs/01-basic-design/<slug>/` — 基本設計 (user stories & high-level behavior).
    - `docs/02-detail-design/<slug>/` — 詳細設計 (field tables, validation rules, business edges, errors).
    - `docs/03-ui/<slug>/figma-links.md` — Figma nodes and reference screenshots.
-   *(Note: Claude's `Read` cannot parse binary Office/PDF files. Convert 詳細設計 workbooks/PDFs with
-   `npx @hoanghainh/aspec-kit convert docs/02-detail-design/<slug>/<file>.xlsx` (or
-   `uv run --script .claude/scripts/convert-design.py <file>` inside a scaffolded project): it writes one
-   Markdown file per sheet next to the untouched original, expands merged cells, keeps field/validation
-   tables as GFM tables and appends an entry to `CHANGELOG.md`. Requires [uv](https://docs.astral.sh/uv/).
-   For `.docx`, export a text/markdown copy alongside the original.)*
+   *(Note: Claude's `Read` cannot parse binary Office/PDF files. For `.xlsx`/`.pdf`, run
+   `npx @hoanghainh/aspec-kit convert <file>` to write Markdown next to the untouched original
+   (see [`docs/02-detail-design/README.md`](docs/02-detail-design/README.md)). For `.docx`, export a
+   text/markdown copy alongside the original.)*
 3. **Execute `/design-to-code`** in Claude Code, providing document paths when prompted.
 4. Claude runs each Spec Kit step (`speckit-specify|clarify|plan|tasks|analyze|implement`) itself via the **Skill tool** and pauses for you to review the artifact. Answer `clarify` questions in chat. Only if a skill is missing or blocked does it fall back to **[HANDOFF]**: copy and run the `/speckit-*` command it prints. See [`docs/04-decisions/2026-10-31-runbook-auto-invoke-speckit.md`](docs/04-decisions/2026-10-31-runbook-auto-invoke-speckit.md).
 5. Review checkpoints at every **[PAUSE]** (intake review, analyze gate, test gate, deployment).
-6. **When the client sends a new design version (仕様変更)**: add it as a new file + `CHANGELOG.md` entry, run `/design-change <old> <new>`, review the report in `docs/changes/` (impact table with reasons, suggested `/speckit-*` re-runs, Japanese 影響範囲 summary for the client), then re-run the pipeline as suggested.
-7. **Ambiguities that only the client can answer** → run `/qa-sheet <NNN>-<slug>` to turn the intake's
+6. **Ambiguities that only the client can answer** → run `/qa-sheet <NNN>-<slug>` to turn the intake's
    *Ambiguities* into a business-polite (敬語) 質問票 `docs/qa/<NNN>-<slug>.md` + Excel-ready CSV
    (UTF-8 BOM), each question with a stable ID `Q-<NNN>-<ii>`. When the client answers, run
    `/qa-sheet --ingest docs/qa/<NNN>-<slug>.csv` to record the answers in `docs/04-decisions/` + `INDEX.md`
    (already-recorded questions are skipped), then re-run `/speckit-clarify`. See [`docs/qa/README.md`](docs/qa/README.md).
+7. **When the client sends a new design version (仕様変更)**: add it as a new file + `CHANGELOG.md` entry, run `/design-change <old> <new>`, review the report in `docs/changes/` (impact table with reasons, suggested `/speckit-*` re-runs, Japanese 影響範囲 summary for the client), then re-run the pipeline as suggested. See [`docs/changes/README.md`](docs/changes/README.md).
 
 ### Workflow Diagram
 
@@ -253,9 +271,10 @@ For comprehensive team guidelines, consult [`docs/TEAM-WORKFLOW.md`](docs/TEAM-W
 
 ## Environment Prerequisites
 
-- **Node.js**: >= 18.0.0
+- **Node.js**: >= 18.3.0 (for the npm CLI).
 - **Claude Code**: Latest release with subagent and slash command support.
-- **Spec Kit CLI**: Installed via `uv` or `pipx` (`uvx --from git+https://github.com/github/spec-kit.git specify init ...`).
+- **uv** (recommended) or `pipx`: installs the Spec Kit CLI (`uvx --from git+https://github.com/github/spec-kit.git specify init ...`). `aspec-kit convert` requires `uv`.
+- **Python 3**: used by `bootstrap.sh` and `.claude/scripts/qa_sheet.py` (standard library only).
 - **Git**: Installed and configured.
 - **Figma MCP Server** (Optional): Pre-configured for both `mcp__figma__*` and `mcp__claude_ai_Figma__*`. If omitted, `design-intake` gracefully falls back to local snapshots in `docs/03-ui/`.
 

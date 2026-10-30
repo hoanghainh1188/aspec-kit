@@ -40,8 +40,10 @@ pnpm create @hoanghainh/aspec-kit my-project
 npx @hoanghainh/aspec-kit init [project-directory] [options]
 # or
 npx @hoanghainh/aspec-kit [project-directory] [options]
-# upgrade an existing project
+# work on an existing project
 npx @hoanghainh/aspec-kit update [project-directory] [--to <ref>] [--dry-run]
+npx @hoanghainh/aspec-kit doctor [project-directory] [--json]
+npx @hoanghainh/aspec-kit convert <file.xlsx|file.xlsm|file.pdf> [--out <dir>] [--force]
 ```
 
 ### Commands
@@ -52,7 +54,11 @@ npx @hoanghainh/aspec-kit update [project-directory] [--to <ref>] [--dry-run]
 - `convert <file.xlsx|file.xlsm|file.pdf> [--out <dir>] [--force]`: Converts a 詳細設計 workbook or PDF
   to Markdown (see [Convert design documents](#convert-design-documents)).
 
-### Options & Flags
+> `update`, `doctor` and `convert` are command names, so `npx @hoanghainh/aspec-kit update` no longer
+> scaffolds into a directory called `update`. To create a directory with one of these names, use
+> `init <name>`.
+
+### Options & Flags (`init`)
 
 | Flag | Description | Default |
 |---|---|:---:|
@@ -81,6 +87,21 @@ npx @hoanghainh/aspec-kit update [project-directory] [--to <ref>] [--dry-run]
 - Post-copy customization (CODEOWNERS, sample cleanup) only touches files created by the current run.
 - **Version manifest**: `init` writes `.aspec-kit.json` (template ref, CLI version, steward and a
   sha256 of every scaffolded file). Commit it — `aspec-kit update` relies on it.
+
+### Examples
+
+```bash
+# 1. Interactive onboarding (Recommended)
+npx @hoanghainh/aspec-kit init my-app
+
+# 2. Non-interactive automated scaffolding (CI friendly)
+npx @hoanghainh/aspec-kit init my-app --yes
+
+# 3. Custom Steward handle with automatic cleanup of sample feature
+npx @hoanghainh/aspec-kit init my-app --steward @lead-engineer --clean
+```
+
+---
 
 ## Updating a project
 
@@ -112,10 +133,10 @@ and deleting the `.aspec-new` file. `--dry-run` prints the plan and writes nothi
 > Projects created before `.aspec-kit.json` existed have no recorded base, so every file that differs
 > from the new template is treated as locally modified (reported as a conflict with an `.aspec-new`
 > copy). After the first update the manifest exists and later updates are fully automatic.
-> Note: `update` is now a command, so `npx @hoanghainh/aspec-kit update` no longer scaffolds into a
-> directory named `update` (use `init update` for that).
 
-### Health check (`aspec-kit doctor`)
+---
+
+## Health check (`aspec-kit doctor`)
 
 Run inside a scaffolded project (or pass its path) to see what is still missing before the team starts:
 
@@ -136,19 +157,6 @@ npx @hoanghainh/aspec-kit doctor --json   # machine-readable, e.g. for CI
 
 Every non-ok line comes with a fix hint. The exit code is `1` when any check fails and `0` otherwise
 (warnings and skipped checks do not fail).
-
-### Examples
-
-```bash
-# 1. Interactive onboarding (Recommended)
-npx @hoanghainh/aspec-kit init my-app
-
-# 2. Non-interactive automated scaffolding (CI friendly)
-npx @hoanghainh/aspec-kit init my-app --yes
-
-# 3. Custom Steward handle with automatic cleanup of sample feature
-npx @hoanghainh/aspec-kit init my-app --steward @lead-engineer --clean
-```
 
 ---
 
@@ -197,13 +205,8 @@ my-project/
 │   ├── settings.json              Permission boundaries (deny -> ask -> allow)
 │   ├── agents/                    5 subagents (design-intake, code-reviewer, security-reviewer, glossary-steward, impact-analyzer)
 │   ├── hooks/                     Format-on-save hook
-<<<<<<< HEAD
-│   ├── scripts/                   convert-design.py (詳細設計 .xlsx/.pdf → Markdown, via uv)
-│   └── commands/                  /design-to-code (orchestration) + /design-change (仕様変更 impact)
-=======
 │   ├── commands/                  /design-to-code (orchestration), /design-change (仕様変更 impact), /qa-sheet (質問票)
-│   └── scripts/                   qa_sheet.py — deterministic CSV/ingest for /qa-sheet
->>>>>>> origin/main
+│   └── scripts/                   qa_sheet.py (/qa-sheet CSV/ingest) + convert-design.py (詳細設計 .xlsx/.pdf → Markdown, via uv)
 ├── docs/
 │   ├── 00-glossary.md              Single source of truth for JP / VI / EN business terms
 │   ├── 01-basic-design/            基本設計 directly from client (read-only)
@@ -211,6 +214,8 @@ my-project/
 │   ├── 03-ui/                      Figma links and visual snapshots
 │   ├── 04-decisions/               Decisions from /speckit-clarify (INDEX.md)
 │   ├── 05-lessons.md               Technical gotchas and project lessons
+│   ├── intake/                     Output artifacts from design-intake
+│   ├── changes/                    仕様変更 impact reports from /design-change
 │   ├── qa/                         質問票 (Q&A sheets) for the client, from /qa-sheet
 │   └── CONSTITUTION_APPEND.md      Recommended constitution articles for JP projects
 ├── src/                            Application source code (src/features/<slug>/)
