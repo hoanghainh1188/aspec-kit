@@ -35,7 +35,9 @@ TASK_LINE_RE = re.compile(
 )
 # Matches AC references such as: AC 2, AC 2, 3, AC 2/3/4, AC-1, AC1..3
 AC_GROUP_RE = re.compile(r"\bAC[-_\s]*(\d+(?:\s*(?:[,/&]|and)\s*\d+)*)", re.IGNORECASE)
-BACKTICK_PATH_RE = re.compile(r"`([^`]+\.[a-zA-Z0-9]+)`")
+BACKTICK_PATH_RE = re.compile(
+    r"`((?![^`]*@)[A-Za-z0-9_./-]+\.(?:ts|tsx|js|jsx|mjs|cjs|py|go|java|kt|rs|rb|cs|php|sql|vue|svelte|css|scss|html))`"
+)
 
 # Matches test blocks: it("...", ...), test("...", ...), def test_...
 TEST_CASE_RE = re.compile(
