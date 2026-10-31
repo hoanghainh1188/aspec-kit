@@ -197,10 +197,12 @@ describe("template copy", () => {
   test("kit-only files are never copied", () => {
     const src = path.join(tmp, "tpl");
     makeTemplate(src);
+    writeFile(src, "examples/01-reservation-app/README.md", "example");
     const files = listTemplateFiles(src, [...DEFAULT_EXCLUDES, ...readIgnoreFile(src)]);
     for (const banned of [
       ".github/workflows/publish-npm.yml",
       "packages/aspec-kit/package.json",
+      "examples/01-reservation-app/README.md",
       "README.md",
       "LICENSE",
       ".aspecignore",

@@ -32,6 +32,7 @@ Production-ready greenfield project template and toolkit for **Claude Code**, sp
   - `/progress-report`: Summarizes `git log` + `tasks.md` checkboxes + open 質問票 items into a Japanese weekly progress report (進捗報告: `完了事項` / `進行中` / `課題・リスク` / `来週予定`).
   - `aspec-kit convert`: Converts 詳細設計 Excel/PDF into Markdown that agents can read, without touching the original.
 - **Maintainable Scaffold**: `aspec-kit update` pulls template fixes into existing projects with a 3-way merge, and `aspec-kit doctor` checks tools and guardrails (see [CLI Commands](#cli-commands)).
+- **End-to-End Example Project**: Browse [`examples/01-reservation-app/`](examples/01-reservation-app/README.md) (and the step-by-step walkthrough in [`examples/README.md`](examples/README.md)) to see a complete Japanese client project from Basic/Detail Design (`.pdf` + `.xlsx`) + Figma wireframe → Intake → 質問票 → Spec/Plan/Tasks → TypeScript + Vitest → Traceability Matrix, テスト仕様書, and 進捗報告.
 - **5-Tier Git-Backed Project Memory**: Externalizes knowledge in Git files to eliminate AI context drift without database infrastructure overhead.
 - **Zero-Conflict Team Workflow**: Combines GitHub Issue IDs for branch naming (`NNN-<slug>`) and timestamp-based specification paths to prevent collision during parallel feature development.
 

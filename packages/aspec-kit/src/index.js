@@ -54,6 +54,7 @@ export const DEFAULT_EXCLUDES = Object.freeze([
   ".aspecignore",
   "packages",
   "assets",
+  "examples",
   "templates",
   "plugin",
   ".claude-plugin",

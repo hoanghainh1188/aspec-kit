@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 460" width="720" height="460" font-family="sans-serif">
+  <rect width="720" height="460" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <rect width="720" height="52" rx="12" fill="#1e293b"/>
+  <text x="24" y="32" fill="#ffffff" font-size="16" font-weight="bold">SCR-RES-01 | 会議室予約登録画面 (Conference Room Reservation)</text>
+  <text x="560" y="32" fill="#94a3b8" font-size="12">Figma Node: 101:204</text>
+
+  <!-- Form card -->
+  <rect x="24" y="72" width="672" height="364" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+
+  <!-- Row 1: Room & Organizer -->
+  <text x="48" y="106" fill="#334155" font-size="13" font-weight="bold">1. 会議室 (roomId) *</text>
+  <rect x="48" y="114" width="290" height="36" rx="6" fill="#f1f5f9" stroke="#94a3b8"/>
+  <text x="60" y="137" fill="#0f172a" font-size="13">ROOM-A — 大会議室A (定員20名)</text>
+
+  <text x="372" y="106" fill="#334155" font-size="13" font-weight="bold">2. 予約者メール (organizerEmail) *</text>
+  <rect x="372" y="114" width="300" height="36" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="384" y="137" fill="#0f172a" font-size="13">taro.tanaka@example.co.jp</text>
+
+  <!-- Row 2: Date & Time -->
+  <text x="48" y="182" fill="#334155" font-size="13" font-weight="bold">3. 利用日 (reservationDate) *</text>
+  <rect x="48" y="190" width="200" height="36" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="60" y="213" fill="#0f172a" font-size="13">2026-11-04 (水)</text>
+
+  <text x="272" y="182" fill="#334155" font-size="13" font-weight="bold">4. 開始時刻 (startTime) *</text>
+  <rect x="272" y="190" width="180" height="36" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="284" y="213" fill="#0f172a" font-size="13">10:00</text>
+
+  <text x="476" y="182" fill="#334155" font-size="13" font-weight="bold">5. 終了時刻 (endTime) *</text>
+  <rect x="476" y="190" width="196" height="36" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="488" y="213" fill="#0f172a" font-size="13">11:30</text>
+
+  <!-- Row 3: Attendees & Projector -->
+  <text x="48" y="258" fill="#334155" font-size="13" font-weight="bold">6. 参加人数 (attendeeCount) *</text>
+  <rect x="48" y="266" width="140" height="36" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="60" y="289" fill="#0f172a" font-size="13">12 名</text>
+
+  <rect x="204" y="270" width="250" height="28" rx="14" fill="#fef3c7" stroke="#f59e0b"/>
+  <text x="220" y="289" fill="#b45309" font-size="12" font-weight="bold">⚠ 10名超：ステータス「承認待ち」</text>
+
+  <rect x="48" y="324" width="18" height="18" rx="4" fill="#2563eb"/>
+  <text x="53" y="338" fill="#ffffff" font-size="13" font-weight="bold">✓</text>
+  <text x="76" y="338" fill="#334155" font-size="13">7. プロジェクターを利用する (requiresProjector)</text>
+
+  <!-- Submit Button -->
+  <rect x="492" y="376" width="180" height="42" rx="8" fill="#2563eb"/>
+  <text x="532" y="402" fill="#ffffff" font-size="14" font-weight="bold">予約を登録する →</text>
+</svg>
