@@ -79,6 +79,7 @@ export const SAMPLE_FEATURE_PATHS = Object.freeze([
   "docs/traceability.md",
   "docs/test-specs/000-example-reservation.md",
   "docs/test-specs/000-example-reservation.csv",
+  "docs/reports/2026-10-31-example-reservation.md",
 ]);
 
 /** Shared files that reference the sample feature and must be filtered line-by-line. */

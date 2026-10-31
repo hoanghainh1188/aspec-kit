@@ -34,6 +34,8 @@
 
 - **`docs/test-specs/`** — `/test-spec` が `spec.md` の受入基準（AC）から生成するテスト仕様書（`<NNN>-<slug>.md`＋Excel用UTF-8 BOM付 `.csv`）。詳細は `docs/test-specs/README.md`。
 
+- **`docs/reports/`** — `/progress-report`（`progress_report.py collect`）が生成する週次進捗報告（`完了事項`／`進行中`／`課題・リスク`／`来週予定`）。詳細は `docs/reports/README.md`。
+
 - **`specs/<feature>/`** — Spec Kitが生成する仕様・計画・タスク（`spec.md`, `plan.md`, `tasks.md`）。手作業で編集せず、パイプラインから再生成します。
 
 - **`.specify/memory/constitution.md`** — プロジェクトの不変原則（Constitution）。Spec Kitワークフロー内で最優先されます。

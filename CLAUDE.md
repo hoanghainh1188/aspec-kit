@@ -53,6 +53,10 @@ giúp mọi agent nhất quán ngay từ lượt gọi đầu tiên>
   Criteria của `spec.md`: `<NNN>-<slug>.md` (bảng 7 cột `No | 観点 | 前提条件 | 手順 | 期待結果 | 結果 | 備考`)
   + `.csv` (UTF-8 BOM cho Excel, `test_spec.py` sinh và kiểm phủ 100% AC). Xem `docs/test-specs/README.md`.
 
+- **`docs/reports/`** — 進捗報告 (báo cáo tiến độ tuần bằng tiếng Nhật) do `/progress-report` sinh từ số liệu
+  của `progress_report.py collect` (`tasks.md` + `docs/qa/` + `git log`): gồm 4 mục `完了事項` / `進行中` /
+  `課題・リスク` / `来週予定`. Xem `docs/reports/README.md`.
+
 - **`specs/<feature>/`** — do Spec Kit sinh (spec.md, plan.md, tasks.md). CÓ THỂ tái sinh, không chỉnh tay.
   Nếu sai, sửa docs/ gốc hoặc bổ sung docs/04-decisions/ rồi chạy lại pipeline.
 
