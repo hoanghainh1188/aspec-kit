@@ -30,6 +30,10 @@
 
 - **`docs/qa/`** — `/qa-sheet` が生成するお客様向け質問票（`<NNN>-<slug>.md`＋Excel用UTF-8 BOM付 `.csv`）。詳細は `docs/qa/README.md`。
 
+- **`docs/traceability.md`** — `/traceability`（`python3 .claude/scripts/traceability.py generate`）が生成する要件トレーサビリティマトリクス（設計書／intake → spec AC → tasks → ソースコード → テストケースを紐付け、テスト未作成ACや未紐付けコードを検出）。
+
+- **`docs/test-specs/`** — `/test-spec` が `spec.md` の受入基準（AC）から生成するテスト仕様書（`<NNN>-<slug>.md`＋Excel用UTF-8 BOM付 `.csv`）。詳細は `docs/test-specs/README.md`。
+
 - **`docs/reports/`** — `/progress-report`（`progress_report.py collect`）が生成する週次進捗報告（`完了事項`／`進行中`／`課題・リスク`／`来週予定`）。詳細は `docs/reports/README.md`。
 
 - **`specs/<feature>/`** — Spec Kitが生成する仕様・計画・タスク（`spec.md`, `plan.md`, `tasks.md`）。手作業で編集せず、パイプラインから再生成します。
