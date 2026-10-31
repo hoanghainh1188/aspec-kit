@@ -18,6 +18,10 @@ Bạn review code do `/speckit-implement` vừa sinh, đối chiếu với 4 ngu
 Ngoài ra tra `docs/05-lessons.md` — code có lặp lại một gotcha đã ghi không? Nếu có → **Blocking**.
 Nếu phát hiện gotcha *mới* trong lúc review → gợi ý người phụ trách append 1 dòng vào `docs/05-lessons.md`.
 
+Nếu có `.claude/scripts/traceability.py`, chạy `python3 .claude/scripts/traceability.py check --json`
+để kiểm toán tự động mối liên kết AC ↔ task ↔ source file ↔ test case (phát hiện AC thiếu test hoặc
+file code mồ côi không gắn với task/requirement nào).
+
 ## Output
 
 Báo cáo 3 mục:

@@ -25,7 +25,9 @@ jobs:
           test -f .claude/commands/design-to-code.md
           test -f .claude/commands/design-change.md
           test -f .claude/commands/qa-sheet.md
+          test -f .claude/commands/traceability.md
           test -f .claude/scripts/qa_sheet.py
+          test -f .claude/scripts/traceability.py
           test -f docs/00-glossary.md
           test -f docs/05-lessons.md
           test -f docs/CONSTITUTION_APPEND.md
@@ -47,6 +49,11 @@ jobs:
             cp docs/qa/000-example-reservation.csv /tmp/qa-expected.csv
             python3 .claude/scripts/qa_sheet.py export docs/qa/000-example-reservation.md
             cmp docs/qa/000-example-reservation.csv /tmp/qa-expected.csv
+          fi
+          if [ -f docs/traceability.md ]; then
+            cp docs/traceability.md /tmp/traceability-expected.md
+            python3 .claude/scripts/traceability.py generate
+            cmp docs/traceability.md /tmp/traceability-expected.md
           fi
 
       - name: Kiểm tra shell script hợp lệ (dry run)
