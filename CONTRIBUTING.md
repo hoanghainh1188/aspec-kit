@@ -15,11 +15,12 @@ Xin chào! Bất cứ ai muốn cải thiện template này đều rất đượ
 
 ## Cấu trúc thư mục
 
-- `.claude/` — bộ agent + command dùng chung
+- `.claude/` — bộ 5 subagent, 3 command, hooks và scripts (`qa_sheet.py`, `convert-design.py`) dùng chung
 - `.claude-plugin/` — metadata và catalog cho chế độ Claude Code plugin
-- `docs/` — templates cho tài liệu Nhật
+- `docs/` — cấu trúc tài liệu Nhật, bộ nhớ 5 tầng (`00-glossary.md`, `04-decisions/`, `05-lessons.md`), `intake/`, `changes/`, `qa/`
+- `packages/aspec-kit/` — mã nguồn CLI `@hoanghainh/aspec-kit` (`init`, `update`, `doctor`, `convert`)
 - `plugin/` — hướng dẫn sử dụng chế độ Claude Code plugin
-- `bootstrap.sh` — chạy specify init sau khi clone
+- `bootstrap.sh` — chạy `specify init` và tích hợp skills/hooks sau khi khởi tạo
 
 ## Test tại chỗ
 
@@ -29,16 +30,18 @@ Trước khi mở PR, chạy smoke test tương đương CI:
 bash -n bootstrap.sh
 bash -n .claude/hooks/format.sh
 python3 .github/scripts/check-template.py
+python3 -m unittest discover -s .claude/scripts -v
 python3 -c "import json; json.load(open('.claude/settings.json'))"
 python3 -c "import json; json.load(open('.claude-plugin/plugin.json'))"
 python3 -c "import json; json.load(open('.claude-plugin/marketplace.json'))"
 ```
 
-Nếu sửa CLI (`packages/aspec-kit/`) — tương đương workflow `kit-ci`:
+Nếu sửa CLI (`packages/aspec-kit/`) hoặc converter — tương đương workflow `kit-ci`:
 
 ```bash
-(cd packages/aspec-kit && npm test)                 # unit + e2e (dùng template local, không cần mạng)
-node .github/scripts/sync-version.mjs --check       # version package.json == plugin.json
+(cd packages/aspec-kit && npm test)                       # unit + e2e (dùng template local, không cần mạng)
+(cd packages/aspec-kit && npm run test:python)            # test converter Excel/PDF → Markdown (cần uv)
+node .github/scripts/sync-version.mjs --check             # version package.json == plugin.json
 npx --yes vitest@3 run src/features/example-reservation   # test của feature mẫu
 ```
 

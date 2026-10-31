@@ -9,6 +9,9 @@ conflict** và **không lệch ngữ cảnh** (glossary, constitution, design g�
 > 1. **`.github/CODEOWNERS`** — thay `@your-lead-handle` bằng GitHub handle thật của (các) steward.
 > 2. **Branch protection cho `main`** — bật *Require PR* + *Require review from Code Owners* +
 >    *Require status checks* (`template-smoke-test`) + *Require branches up to date*. Chi tiết ở [mục 9](#9-điểm-nóng-conflict--branch-protection).
+>
+> Kiểm tra tự động cả 2 mục trên (cùng công cụ, Spec Kit skills và formatter hook) bằng:
+> `npx @hoanghainh/aspec-kit doctor`
 
 ---
 
@@ -128,12 +131,14 @@ branch  NNN-<slug>                         ← ID toàn cục, không trùng (m�
       │
       ├─ docs/01-03/<slug>/                 ← design gốc (1 thư mục/feature)
       ├─ docs/intake/<NNN>-<slug>.md        ← 1 file/feature (mục 9 hotspot: Thấp)
+      ├─ docs/qa/<NNN>-<slug>.md (+ .csv)   ← 質問票 gửi khách theo feature (/qa-sheet)
+      ├─ docs/changes/<date>-<slug>.md      ← báo cáo tác động 仕様変更 (/design-change)
       ├─ docs/04-decisions/<date>-<slug>.md ← 1 file/quyết định
       ├─ specs/<timestamp>-<slug>/          ← Spec Kit timestamp, không quét (mục 2)
       └─ src/features/<slug>/               ← code cô lập (mục 4)
 
 vùng DÙNG CHUNG (đi ngang mọi làn — nơi drift + conflict sống):
-      docs/00-glossary.md · .specify/memory/constitution.md · src/shared/ · config
+      docs/00-glossary.md · .specify/memory/constitution.md · docs/04-decisions/INDEX.md · src/shared/ · config
       → gác cổng (mục 7) + rebase (mục 6)
 ```
 
@@ -204,7 +209,7 @@ Nguồn ngữ cảnh dùng chung: `docs/00-glossary.md`, `.specify/memory/consti
   git fetch origin && git rebase origin/main
   #   nếu docs/00-glossary.md hoặc .specify/memory/constitution.md nằm trong diff vừa hút:
   git diff HEAD@{1} HEAD -- docs/00-glossary.md .specify/memory/constitution.md   # xem đổi gì
-  /speckit-analyze          # (dán chạy) bắt code/spec đã lệch term/rule mới
+  /speckit-analyze          # chạy lại để bắt code/spec đã lệch term/rule mới
   # → gọi lại subagent glossary-steward để soi term lệch trong src/ + specs/
   # → sửa mọi chỗ dùng term cũ, rồi mới tiếp tục / mở PR
   ```
@@ -233,15 +238,19 @@ Gác cổng **theo mức blast radius**, không chặn cứng mọi thứ (trán
 
 ---
 
-## 8. Cập nhật tài liệu gốc `docs/01-03` giữa chừng
+## 8. Cập nhật tài liệu gốc `docs/01-03` giữa chừng (仕様変更)
 
 Khi khách gửi bản design mới trong lúc đang code:
 
-- **Không ghi đè** bản cũ. Thêm **file version mới** + cập nhật `CHANGELOG.md` trong thư mục tương ứng.
+- **Không ghi đè** bản cũ. Thêm **file version mới** (nếu là `.xlsx`/`.pdf`, chạy `npx @hoanghainh/aspec-kit convert <file>` để sinh bản `.md` cạnh file gốc) + cập nhật `CHANGELOG.md` trong thư mục tương ứng.
   `CHANGELOG.md` **bắt buộc** có mục **"Affected issues"** liệt kê số issue của các feature bị ảnh
   hưởng — đó là cầu nối để biết feature nào phải re-run (xem `README.md` trong `docs/01-03`).
-- Mở **issue re-run** cho các feature bị ảnh hưởng → chạy lại pipeline từ `design-intake` để spec/code
-  bám bản design mới, và ghi quyết định phát sinh vào `docs/04-decisions/`.
+- Chạy **`/design-change <bản-cũ> <bản-mới>`** để subagent `impact-analyzer` lập báo cáo tác động
+  `docs/changes/<YYYY-MM-DD>-<slug>.md` (bảng tác động kèm lý do tới từng AC/task/file/test, đề xuất lệnh
+  Spec Kit cần chạy lại, và tóm tắt 影響範囲 tiếng Nhật gửi khách).
+- Mở **issue re-run** cho các feature bị ảnh hưởng (đính link báo cáo `docs/changes/`) → chạy lại
+  pipeline `/design-to-code` theo mục "Đề xuất chạy lại" của báo cáo, và ghi quyết định phát sinh vào
+  `docs/04-decisions/` (hoặc qua `/qa-sheet` nếu cần hỏi lại khách).
 
 ---
 
@@ -256,6 +265,8 @@ Khi khách gửi bản design mới trong lúc đang code:
 | Thư mục `specs/<prefix>-*` | Thấp | `feature_numbering=timestamp` → không quét, không trùng (mục 2) |
 | `docs/04-decisions/<date>-<slug>.md` | Thấp | Mỗi quyết định 1 file có timestamp |
 | `docs/intake/<NNN>-<slug>.md` | Thấp | Mỗi feature 1 file, đặt theo số issue |
+| `docs/qa/<NNN>-<slug>.md` (+ `.csv`) | Thấp | Mỗi feature 1 cặp file 質問票, đặt theo số issue |
+| `docs/changes/<date>-<slug>.md` | Thấp | Mỗi lần phân tích 仕様変更 1 file có ngày + slug |
 | `specs/<feature>/` | Thấp | Mỗi feature 1 thư mục, cô lập theo branch |
 | `src/features/<slug>/` | Thấp | Code riêng feature, cô lập theo slug (mục 4) |
 

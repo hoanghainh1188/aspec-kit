@@ -33,8 +33,11 @@ export const PROTECTED_PATHS = Object.freeze([
   "docs/04-decisions",
   "docs/05-lessons.md",
   "docs/intake",
+  "docs/changes",
+  "docs/qa",
   "specs",
   "src",
+  "tests",
   MANIFEST_FILE,
 ]);
 // docs/01-basic-design, docs/02-detail-design, docs/03-ui (and any other docs/01-*…03-* folder)
@@ -51,7 +54,7 @@ using the hashes recorded in ${MANIFEST_FILE} to tell your edits from template c
   - changed only locally      → kept as-is
   - changed on both sides     → conflict: kept as-is, new version written to <file>${CONFLICT_SUFFIX}
 Never touched: docs/01-* docs/02-* docs/03-*, docs/00-glossary.md, docs/04-decisions/,
-docs/05-lessons.md, docs/intake/, specs/, src/.
+docs/05-lessons.md, docs/intake/, docs/changes/, docs/qa/, specs/, src/, tests/.
 
 Options:
   --to <ref>             Git tag/branch of the template to upgrade to

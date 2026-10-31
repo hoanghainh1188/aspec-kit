@@ -20,7 +20,9 @@ giúp mọi agent nhất quán ngay từ lượt gọi đầu tiên>
 
 - **`docs/01-basic-design/`, `docs/02-detail-design/`, `docs/03-ui/`** — nguồn sự thật GỐC từ khách hàng.
   Đây là source of truth duy nhất. Agent KHÔNG BAO GIỜ sửa nội dung ở đây. Khi có bản mới, thêm file mới +
-  CHANGELOG.md, không ghi đè.
+  CHANGELOG.md, không ghi đè. (Với file `.xlsx`/`.pdf` mà `Read` không đọc được trực tiếp, chạy
+  `npx @hoanghainh/aspec-kit convert <file>` hoặc `uv run --script .claude/scripts/convert-design.py <file>`
+  để sinh bản `.md` cạnh file gốc — xem `docs/02-detail-design/README.md`.)
 
 - **`docs/00-glossary.md`** — thuật ngữ Nhật-Việt-Anh. Mọi agent PHẢI tra file này trước khi đặt tên biến/field
   liên quan nghiệp vụ. Gặp thuật ngữ mới → **append** vào đây trước khi đặt tên (được làm ngay trong branch
