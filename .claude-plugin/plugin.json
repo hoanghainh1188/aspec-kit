@@ -15,7 +15,8 @@
   "commands": [
     "./.claude/commands/design-to-code.md",
     "./.claude/commands/design-change.md",
-    "./.claude/commands/qa-sheet.md"
+    "./.claude/commands/qa-sheet.md",
+    "./.claude/commands/progress-report.md"
   ],
   "agents": [
     "./.claude/agents/design-intake.md",

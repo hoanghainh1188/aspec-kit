@@ -189,6 +189,13 @@ CHANGE_REPORT_SECTIONS = (
     ("## 3. 影響範囲", "tóm tắt 影響範囲 cho khách"),
 )
 
+PROGRESS_REPORT_SECTIONS = (
+    ("## 1. 完了", "完了事項"),
+    ("## 2. 進行中", "進行中"),
+    ("## 3. 課題・リスク", "課題・リスク"),
+    ("## 4. 来週予定", "来週予定"),
+)
+
 
 def check_change_reports() -> None:
     changes_dir = os.path.join(ROOT, "docs", "changes")
@@ -204,6 +211,20 @@ def check_change_reports() -> None:
                 err(f"[changes] docs/changes/{fn}: thiếu phần `{prefix}…` ({label})")
 
 
+def check_progress_reports() -> None:
+    reports_dir = os.path.join(ROOT, "docs", "reports")
+    if not os.path.isdir(reports_dir):
+        return
+    for fn in sorted(os.listdir(reports_dir)):
+        if not fn.endswith(".md") or fn == "README.md":
+            continue
+        with open(os.path.join(reports_dir, fn), encoding="utf-8") as f:
+            headings = [line.strip() for line in f if line.startswith("## ")]
+        for prefix, label in PROGRESS_REPORT_SECTIONS:
+            if not any(h.startswith(prefix) for h in headings):
+                err(f"[reports] docs/reports/{fn}: thiếu phần `{prefix}…` ({label})")
+
+
 def main() -> int:
     md_files = iter_markdown()
     check_internal_links(md_files)
@@ -212,6 +233,7 @@ def main() -> int:
     check_mermaid(md_files)
     check_glossary_duplicates()
     check_change_reports()
+    check_progress_reports()
 
     if errors:
         print("✗ check-template: phát hiện vấn đề\n")

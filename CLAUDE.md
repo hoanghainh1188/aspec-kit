@@ -45,6 +45,10 @@ giúp mọi agent nhất quán ngay từ lượt gọi đầu tiên>
   `Q-<NNN>-<ii>` ổn định, không đánh lại số. Khách trả lời → `/qa-sheet --ingest <file>` ghi vào
   `docs/04-decisions/` + `INDEX.md`. Xem `docs/qa/README.md`.
 
+- **`docs/reports/`** — 進捗報告 (báo cáo tiến độ tuần bằng tiếng Nhật) do `/progress-report` sinh từ số liệu
+  của `progress_report.py collect` (`tasks.md` + `docs/qa/` + `git log`): gồm 4 mục `完了事項` / `進行中` /
+  `課題・リスク` / `来週予定`. Xem `docs/reports/README.md`.
+
 - **`specs/<feature>/`** — do Spec Kit sinh (spec.md, plan.md, tasks.md). CÓ THỂ tái sinh, không chỉnh tay.
   Nếu sai, sửa docs/ gốc hoặc bổ sung docs/04-decisions/ rồi chạy lại pipeline.
 
