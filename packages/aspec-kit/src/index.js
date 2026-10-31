@@ -9,9 +9,19 @@ import { parseArgs } from "node:util";
 import { MANIFEST_FILE, buildManifest, hashProjectFiles, readManifest, writeManifest } from "./manifest.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { runConvert } from "./commands/convert.js";
+import { DEFAULT_LANG, SUPPORTED_LANGS, applyLang, normalizeLang } from "./lang.js";
 import { STACK_CONFIGS, SUPPORTED_STACKS, applyStack, normalizeStack } from "./stack.js";
 
-export { STACK_CONFIGS, SUPPORTED_STACKS, applyStack, normalizeStack };
+export {
+  DEFAULT_LANG,
+  STACK_CONFIGS,
+  SUPPORTED_LANGS,
+  SUPPORTED_STACKS,
+  applyLang,
+  applyStack,
+  normalizeLang,
+  normalizeStack,
+};
 
 const GITHUB_OWNER_REPO = "hoanghainh1188/aspec-kit";
 const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER_REPO}.git`;
@@ -32,6 +42,7 @@ export const DEFAULT_EXCLUDES = Object.freeze([
   ".aspecignore",
   "packages",
   "assets",
+  "templates",
   "plugin",
   ".claude-plugin",
   ".github/workflows/publish-npm.yml",
@@ -100,6 +111,8 @@ Options:
   --steward <handle>     GitHub handle (or @org/team, or email) for .github/CODEOWNERS
   --stack <stack>        Auto-configure formatter, permissions & CLAUDE.md for stack:
                          ts | python | go | java
+  --lang <lang>          Language of scaffolded template conventions & agents:
+                         vi (default) | en | ja
   --keep-example         Keep sample feature (000-example-reservation)
   --clean                Clean up sample feature
   --force                Overwrite files that already exist in the target directory
@@ -175,6 +188,7 @@ export function parseCliArgs(argv) {
         yes: { type: "boolean", short: "y" },
         steward: { type: "string" },
         stack: { type: "string" },
+        lang: { type: "string" },
         "keep-example": { type: "boolean" },
         clean: { type: "boolean" },
         force: { type: "boolean" },
@@ -211,6 +225,7 @@ export function parseCliArgs(argv) {
     yes: Boolean(values.yes),
     steward: values.steward !== undefined ? normalizeSteward(values.steward) : null,
     stack: values.stack !== undefined ? normalizeStack(values.stack, CliError) : null,
+    lang: values.lang !== undefined ? normalizeLang(values.lang, CliError) : DEFAULT_LANG,
     // null = ask the user; true/false = decided by flag
     keepExample: values["keep-example"] ? true : values.clean ? false : null,
     force: Boolean(values.force),
@@ -577,6 +592,15 @@ export async function main(argv = process.argv.slice(2)) {
 
     // 5. Customize project configuration
     console.log("==> Customizing project files...");
+    if (opts.lang && opts.lang !== DEFAULT_LANG) {
+      const langUpdated = applyLang(targetDir, templateHandle.dir, opts.lang, ownedFiles);
+      if (langUpdated.length > 0) {
+        console.log(`✓ Applied "${opts.lang}" language pack (${langUpdated.length} files)`);
+      } else {
+        warn(`Language pack "${opts.lang}" had no matching files to apply.`);
+      }
+    }
+
     const stewardApplied = applySteward(targetDir, steward, ownedFiles);
     if (stewardApplied) {
       console.log(`✓ Updated .github/CODEOWNERS with ${steward}`);
@@ -617,6 +641,7 @@ export async function main(argv = process.argv.slice(2)) {
         cliVersion: pkg.version,
         steward: stewardApplied ? steward : previous?.steward ?? null,
         stack: stackModified.length > 0 ? opts.stack : previous?.stack ?? null,
+        lang: opts.lang !== DEFAULT_LANG ? opts.lang : previous?.lang ?? null,
         files: { ...previous?.files, ...hashProjectFiles(targetDir, ownedFiles) },
       })
     );

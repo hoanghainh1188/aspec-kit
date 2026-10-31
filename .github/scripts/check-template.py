@@ -40,6 +40,7 @@ def iter_markdown() -> list[str]:
 
 
 LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
+LANG_PACK_RE = re.compile(r"^templates/lang/[^/]+/(.+)$")
 
 
 def check_internal_links(md_files: list[str]) -> None:
@@ -47,6 +48,8 @@ def check_internal_links(md_files: list[str]) -> None:
         with open(path, encoding="utf-8") as f:
             text = f.read()
         base = os.path.dirname(path)
+        rel_from_root = os.path.relpath(path, ROOT).replace(os.sep, "/")
+        lang_match = LANG_PACK_RE.match(rel_from_root)
         for target in LINK_RE.findall(text):
             target = target.strip()
             # bỏ qua link ngoài / anchor thuần / mailto
@@ -57,18 +60,24 @@ def check_internal_links(md_files: list[str]) -> None:
             if not clean:
                 continue
             resolved = os.path.normpath(os.path.join(base, clean))
-            if not os.path.exists(resolved):
-                rel = os.path.relpath(path, ROOT)
-                err(f"[link] {rel}: link trỏ tới file không tồn tại → {target}")
+            if os.path.exists(resolved):
+                continue
+            # Nếu file nằm trong templates/lang/<lang>/<subpath>, cho phép fallback về ROOT/<subpath>
+            if lang_match:
+                virtual_path = os.path.join(ROOT, lang_match.group(1))
+                virtual_resolved = os.path.normpath(os.path.join(os.path.dirname(virtual_path), clean))
+                if os.path.exists(virtual_resolved):
+                    continue
+            rel = os.path.relpath(path, ROOT)
+            err(f"[link] {rel}: link trỏ tới file không tồn tại → {target}")
 
 
 REQUIRED_FRONTMATTER = ("name:", "description:", "tools:")
 
 
-def check_agent_frontmatter() -> None:
-    agents_dir = os.path.join(ROOT, ".claude", "agents")
+def _check_agents_in_dir(agents_dir: str, label_prefix: str) -> None:
     if not os.path.isdir(agents_dir):
-        err("[frontmatter] không tìm thấy .claude/agents/")
+        err(f"[frontmatter] không tìm thấy {label_prefix}")
         return
     for fn in sorted(os.listdir(agents_dir)):
         if not fn.endswith(".md"):
@@ -77,32 +86,54 @@ def check_agent_frontmatter() -> None:
         with open(path, encoding="utf-8") as f:
             text = f.read()
         if not text.startswith("---"):
-            err(f"[frontmatter] .claude/agents/{fn}: thiếu frontmatter mở đầu `---`")
+            err(f"[frontmatter] {label_prefix}/{fn}: thiếu frontmatter mở đầu `---`")
             continue
         end = text.find("\n---", 3)
         if end == -1:
-            err(f"[frontmatter] .claude/agents/{fn}: thiếu `---` đóng frontmatter")
+            err(f"[frontmatter] {label_prefix}/{fn}: thiếu `---` đóng frontmatter")
             continue
         block = text[3:end]
         for key in REQUIRED_FRONTMATTER:
             if key not in block:
-                err(f"[frontmatter] .claude/agents/{fn}: thiếu key `{key}`")
+                err(f"[frontmatter] {label_prefix}/{fn}: thiếu key `{key}`")
+
+
+def check_agent_frontmatter() -> None:
+    _check_agents_in_dir(os.path.join(ROOT, ".claude", "agents"), ".claude/agents")
+    lang_root = os.path.join(ROOT, "templates", "lang")
+    if os.path.isdir(lang_root):
+        for lang in sorted(os.listdir(lang_root)):
+            lang_agents = os.path.join(lang_root, lang, ".claude", "agents")
+            if os.path.isdir(lang_agents):
+                _check_agents_in_dir(lang_agents, f"templates/lang/{lang}/.claude/agents")
 
 
 STEP_RE = re.compile(r"^(\d+)\.\s", re.MULTILINE)
 
 
-def check_runbook_numbering() -> None:
-    path = os.path.join(ROOT, ".claude", "commands", "design-to-code.md")
+def _check_runbook_file(path: str, label: str) -> None:
     if not os.path.exists(path):
-        err("[steps] không tìm thấy .claude/commands/design-to-code.md")
+        err(f"[steps] không tìm thấy {label}")
         return
     with open(path, encoding="utf-8") as f:
         text = f.read()
     nums = [int(n) for n in STEP_RE.findall(text)]
     expected = list(range(1, len(nums) + 1))
     if nums != expected:
-        err(f"[steps] design-to-code.md: số bước không liên tục 1..N → thấy {nums}")
+        err(f"[steps] {label}: số bước không liên tục 1..N → thấy {nums}")
+
+
+def check_runbook_numbering() -> None:
+    _check_runbook_file(
+        os.path.join(ROOT, ".claude", "commands", "design-to-code.md"),
+        ".claude/commands/design-to-code.md",
+    )
+    lang_root = os.path.join(ROOT, "templates", "lang")
+    if os.path.isdir(lang_root):
+        for lang in sorted(os.listdir(lang_root)):
+            rb = os.path.join(lang_root, lang, ".claude", "commands", "design-to-code.md")
+            if os.path.exists(rb):
+                _check_runbook_file(rb, f"templates/lang/{lang}/.claude/commands/design-to-code.md")
 
 
 MERMAID_BLOCK_RE = re.compile(r"```mermaid\n(.*?)```", re.DOTALL)
