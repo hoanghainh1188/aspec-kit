@@ -65,6 +65,7 @@ npx @hoanghainh/aspec-kit convert <file.xlsx|file.xlsm|file.pdf> [--out <dir>] [
 | `[project-directory]` | Target directory name for the new project | `my-aspec-app` |
 | `-y, --yes` | Skip interactive prompts and accept all defaults | `false` |
 | `--steward <handle>` | Specify GitHub handle of project Steward for `.github/CODEOWNERS` | `@your-handle` |
+| `--lang <lang>` | Language of scaffolded conventions (`CLAUDE.md`, `TEAM-WORKFLOW.md`, subagents, commands): `vi`, `en`, `ja` | `vi` |
 | `--clean` | Automatically clean up reference sample feature (`000-example-reservation`) | `true` with `-y` |
 | `--keep-example` | Keep the sample feature to inspect code & spec structure | `false` |
 | `--force` | Overwrite files that already exist in the target directory | `false` (existing files are kept & reported) |

@@ -17,6 +17,7 @@ import {
   readIgnoreFile,
 } from "../index.js";
 import { MANIFEST_FILE, buildManifest, hashContent, hashFile, readManifest, writeManifest } from "../manifest.js";
+import { DEFAULT_LANG, resolveLangSourcePath } from "../lang.js";
 
 export const CONFLICT_SUFFIX = ".aspec-new";
 
@@ -89,9 +90,10 @@ export function parseUpdateArgs(argv) {
   };
 }
 
-/** Template content as it would be scaffolded (CODEOWNERS gets the recorded steward). */
-function readTheirs(templateDir, rel, steward) {
-  const buf = fs.readFileSync(path.join(templateDir, rel));
+/** Template content as it would be scaffolded (CODEOWNERS gets the recorded steward; localized files resolve via lang). */
+function readTheirs(templateDir, rel, steward, lang = DEFAULT_LANG) {
+  const srcPath = resolveLangSourcePath(templateDir, rel, lang);
+  const buf = fs.readFileSync(srcPath);
   if (rel === ".github/CODEOWNERS" && steward) {
     return Buffer.from(buf.toString("utf-8").split(CODEOWNERS_PLACEHOLDER).join(steward), "utf-8");
   }
@@ -111,6 +113,7 @@ export function planUpdate({ projectDir, templateDir, manifest }) {
   );
   const baseFiles = manifest?.files ?? {};
   const steward = manifest?.steward ?? null;
+  const lang = manifest?.lang ?? DEFAULT_LANG;
   const all = [...new Set([...templateFiles, ...Object.keys(baseFiles)])].sort();
 
   const entries = [];
@@ -131,7 +134,7 @@ export function planUpdate({ projectDir, templateDir, manifest }) {
       continue;
     }
 
-    const theirsBuf = readTheirs(templateDir, rel, steward);
+    const theirsBuf = readTheirs(templateDir, rel, steward, lang);
     const theirs = hashContent(theirsBuf);
     const mode = fs.statSync(path.join(templateDir, rel)).mode;
     files[rel] = theirs;
@@ -231,6 +234,7 @@ export async function runUpdate(argv, { cliVersion }) {
         templateRef: handle.ref,
         cliVersion,
         steward: manifest?.steward ?? null,
+        lang: manifest?.lang ?? null,
         files: plan.files,
       })
     );

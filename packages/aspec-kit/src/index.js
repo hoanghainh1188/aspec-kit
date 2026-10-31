@@ -9,6 +9,9 @@ import { parseArgs } from "node:util";
 import { MANIFEST_FILE, buildManifest, hashProjectFiles, readManifest, writeManifest } from "./manifest.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { runConvert } from "./commands/convert.js";
+import { DEFAULT_LANG, SUPPORTED_LANGS, applyLang, normalizeLang } from "./lang.js";
+
+export { DEFAULT_LANG, SUPPORTED_LANGS, applyLang, normalizeLang };
 
 const GITHUB_OWNER_REPO = "hoanghainh1188/aspec-kit";
 const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER_REPO}.git`;
@@ -29,6 +32,7 @@ export const DEFAULT_EXCLUDES = Object.freeze([
   ".aspecignore",
   "packages",
   "assets",
+  "templates",
   "plugin",
   ".claude-plugin",
   ".github/workflows/publish-npm.yml",
@@ -95,6 +99,8 @@ Options:
   -h, --help             Display this help message
   -y, --yes              Use default settings without interactive prompts
   --steward <handle>     GitHub handle (or @org/team, or email) for .github/CODEOWNERS
+  --lang <lang>          Language of scaffolded template conventions & agents:
+                         vi (default) | en | ja
   --keep-example         Keep sample feature (000-example-reservation)
   --clean                Clean up sample feature
   --force                Overwrite files that already exist in the target directory
@@ -169,6 +175,7 @@ export function parseCliArgs(argv) {
         version: { type: "boolean", short: "v" },
         yes: { type: "boolean", short: "y" },
         steward: { type: "string" },
+        lang: { type: "string" },
         "keep-example": { type: "boolean" },
         clean: { type: "boolean" },
         force: { type: "boolean" },
@@ -204,6 +211,7 @@ export function parseCliArgs(argv) {
     version: Boolean(values.version),
     yes: Boolean(values.yes),
     steward: values.steward !== undefined ? normalizeSteward(values.steward) : null,
+    lang: values.lang !== undefined ? normalizeLang(values.lang, CliError) : DEFAULT_LANG,
     // null = ask the user; true/false = decided by flag
     keepExample: values["keep-example"] ? true : values.clean ? false : null,
     force: Boolean(values.force),
@@ -570,6 +578,15 @@ export async function main(argv = process.argv.slice(2)) {
 
     // 5. Customize project configuration
     console.log("==> Customizing project files...");
+    if (opts.lang && opts.lang !== DEFAULT_LANG) {
+      const langUpdated = applyLang(targetDir, templateHandle.dir, opts.lang, ownedFiles);
+      if (langUpdated.length > 0) {
+        console.log(`✓ Applied "${opts.lang}" language pack (${langUpdated.length} files)`);
+      } else {
+        warn(`Language pack "${opts.lang}" had no matching files to apply.`);
+      }
+    }
+
     const stewardApplied = applySteward(targetDir, steward, ownedFiles);
     if (stewardApplied) {
       console.log(`✓ Updated .github/CODEOWNERS with ${steward}`);
@@ -600,6 +617,7 @@ export async function main(argv = process.argv.slice(2)) {
         templateRef: templateHandle.ref,
         cliVersion: pkg.version,
         steward: stewardApplied ? steward : previous?.steward ?? null,
+        lang: opts.lang !== DEFAULT_LANG ? opts.lang : previous?.lang ?? null,
         files: { ...previous?.files, ...hashProjectFiles(targetDir, ownedFiles) },
       })
     );

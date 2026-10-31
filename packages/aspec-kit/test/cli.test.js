@@ -11,10 +11,14 @@ import { fileURLToPath } from "node:url";
 import {
   CliError,
   DEFAULT_EXCLUDES,
+  DEFAULT_LANG,
+  SUPPORTED_LANGS,
+  applyLang,
   applySteward,
   copyTemplate,
   isExcluded,
   listTemplateFiles,
+  normalizeLang,
   normalizeSteward,
   parseCliArgs,
   readIgnoreFile,
@@ -118,6 +122,16 @@ describe("parseCliArgs", () => {
     assert.equal(parseCliArgs(["--template-ref", "v1.2.3"]).templateRef, "v1.2.3");
     assert.equal(parseCliArgs(["--template-ref", "feat/x"]).templateRef, "feat/x");
     assert.throws(() => parseCliArgs(["--template-ref", "main; rm -rf /"]), CliError);
+  });
+
+  test("--lang is parsed and validated (defaults to vi)", () => {
+    assert.equal(parseCliArgs([]).lang, DEFAULT_LANG);
+    for (const l of SUPPORTED_LANGS) {
+      assert.equal(parseCliArgs(["--lang", l]).lang, l);
+      assert.equal(parseCliArgs(["--lang", l.toUpperCase()]).lang, l);
+    }
+    assert.throws(() => parseCliArgs(["--lang", "fr"]), CliError);
+    assert.throws(() => parseCliArgs(["--lang"]), CliError);
   });
 });
 
@@ -302,6 +316,28 @@ describe("CLI end-to-end (local template)", () => {
     assert.match(out, /Skipped/);
     assert.equal(fs.readFileSync(path.join(tmp, "CLAUDE.md"), "utf-8"), "MY OWN RULES");
   });
+
+  test("init --lang en and --lang ja overlay localized docs/agents and pass check-template.py", () => {
+    for (const [lang, expectedHeading] of [
+      ["en", "# Project Conventions for AI Agents"],
+      ["ja", "# AIエージェント向けプロジェクト規約"],
+    ]) {
+      const dirName = `demo-${lang}`;
+      run(["init", dirName, "-y", "--clean", "--steward", "@lead", "--lang", lang], tmp);
+      const proj = path.join(tmp, dirName);
+
+      assert.ok(!fs.existsSync(path.join(proj, "templates")), "templates/ pack dir must not be copied");
+      const claudeMd = fs.readFileSync(path.join(proj, "CLAUDE.md"), "utf-8");
+      assert.ok(claudeMd.startsWith(expectedHeading), `CLAUDE.md for ${lang} should start with ${expectedHeading}`);
+
+      const manifest = JSON.parse(fs.readFileSync(path.join(proj, ".aspec-kit.json"), "utf-8"));
+      assert.equal(manifest.lang, lang);
+
+      execFileSync("python3", [path.join(proj, ".github/scripts/check-template.py")], {
+        stdio: "pipe",
+      });
+    }
+  });
 });
 
 // update ─────────────────────────────────────────────────────────────────────
@@ -383,6 +419,23 @@ describe("aspec-kit update", () => {
     // Second run is a no-op
     const out = runWith(v2, ["update"], proj);
     assert.doesNotMatch(out, /^(Updated|Added|Conflicts) /m);
+  });
+
+  test("update uses recorded lang pack from manifest", () => {
+    const v1 = path.join(tmp, "lang-v1");
+    makeTemplate(v1);
+    writeFile(v1, "templates/lang/en/CLAUDE.md", "# English rules v1");
+    runWith(v1, ["init", "en-proj", "-y", "--clean", "--lang", "en"], tmp);
+    const proj = path.join(tmp, "en-proj");
+    assert.equal(read(proj, "CLAUDE.md"), "# English rules v1");
+
+    const v2 = path.join(tmp, "lang-v2");
+    makeTemplate(v2);
+    writeFile(v2, "templates/lang/en/CLAUDE.md", "# English rules v2");
+    const out = runWith(v2, ["update"], proj);
+    assert.doesNotMatch(out, /Conflicts/);
+    assert.equal(read(proj, "CLAUDE.md"), "# English rules v2");
+    assert.equal(manifestOf(proj).lang, "en");
   });
 
   test("local-only changes are kept; changes on both sides become conflicts", () => {
