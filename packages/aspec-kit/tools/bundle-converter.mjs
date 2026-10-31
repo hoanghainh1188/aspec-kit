@@ -15,4 +15,4 @@ if (!fs.existsSync(SOURCE)) {
 }
 fs.mkdirSync(path.dirname(DEST), { recursive: true });
 fs.copyFileSync(SOURCE, DEST);
-console.log(`bundle-converter: ${path.relative(PKG_ROOT, SOURCE)} → ${path.relative(PKG_ROOT, DEST)}`);
+console.error(`bundle-converter: ${path.relative(PKG_ROOT, SOURCE)} → ${path.relative(PKG_ROOT, DEST)}`);
