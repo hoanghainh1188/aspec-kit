@@ -45,6 +45,10 @@ giúp mọi agent nhất quán ngay từ lượt gọi đầu tiên>
   `Q-<NNN>-<ii>` ổn định, không đánh lại số. Khách trả lời → `/qa-sheet --ingest <file>` ghi vào
   `docs/04-decisions/` + `INDEX.md`. Xem `docs/qa/README.md`.
 
+- **`docs/traceability.md`** — 要件トレーサビリティマトリクス (ma trận truy vết) do `/traceability`
+  (`python3 .claude/scripts/traceability.py generate`) sinh: liên kết design/intake → spec AC → task →
+  source file → test case và báo động AC thiếu test hoặc code không gắn requirement.
+
 - **`specs/<feature>/`** — do Spec Kit sinh (spec.md, plan.md, tasks.md). CÓ THỂ tái sinh, không chỉnh tay.
   Nếu sai, sửa docs/ gốc hoặc bổ sung docs/04-decisions/ rồi chạy lại pipeline.
 
