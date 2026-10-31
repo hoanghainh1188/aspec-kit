@@ -25,7 +25,9 @@ jobs:
           test -f .claude/commands/design-to-code.md
           test -f .claude/commands/design-change.md
           test -f .claude/commands/qa-sheet.md
+          test -f .claude/commands/test-spec.md
           test -f .claude/scripts/qa_sheet.py
+          test -f .claude/scripts/test_spec.py
           test -f docs/00-glossary.md
           test -f docs/05-lessons.md
           test -f docs/CONSTITUTION_APPEND.md
@@ -47,6 +49,11 @@ jobs:
             cp docs/qa/000-example-reservation.csv /tmp/qa-expected.csv
             python3 .claude/scripts/qa_sheet.py export docs/qa/000-example-reservation.md
             cmp docs/qa/000-example-reservation.csv /tmp/qa-expected.csv
+          fi
+          if [ -f docs/test-specs/000-example-reservation.md ]; then
+            cp docs/test-specs/000-example-reservation.csv /tmp/test-spec-expected.csv
+            python3 .claude/scripts/test_spec.py export docs/test-specs/000-example-reservation.md
+            cmp docs/test-specs/000-example-reservation.csv /tmp/test-spec-expected.csv
           fi
 
       - name: Kiểm tra shell script hợp lệ (dry run)
