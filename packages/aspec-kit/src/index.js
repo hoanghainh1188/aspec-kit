@@ -16,8 +16,24 @@ import {
   applyAgents,
   normalizeAgents,
 } from "./agents.js";
+import { DEFAULT_LANG, SUPPORTED_LANGS, applyLang, normalizeLang } from "./lang.js";
+import { STACK_CONFIGS, SUPPORTED_STACKS, applyStack, normalizeStack } from "./stack.js";
 
-export { AGENT_METADATA, DEFAULT_AGENTS, SUPPORTED_AGENTS, applyAgents, normalizeAgents };
+export {
+  AGENT_METADATA,
+  DEFAULT_AGENTS,
+  DEFAULT_LANG,
+  STACK_CONFIGS,
+  SUPPORTED_AGENTS,
+  SUPPORTED_LANGS,
+  SUPPORTED_STACKS,
+  applyAgents,
+  applyLang,
+  applyStack,
+  normalizeAgents,
+  normalizeLang,
+  normalizeStack,
+};
 
 const GITHUB_OWNER_REPO = "hoanghainh1188/aspec-kit";
 const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER_REPO}.git`;
@@ -38,6 +54,7 @@ export const DEFAULT_EXCLUDES = Object.freeze([
   ".aspecignore",
   "packages",
   "assets",
+  "templates",
   "plugin",
   ".claude-plugin",
   ".github/workflows/publish-npm.yml",
@@ -104,6 +121,10 @@ Options:
   -h, --help             Display this help message
   -y, --yes              Use default settings without interactive prompts
   --steward <handle>     GitHub handle (or @org/team, or email) for .github/CODEOWNERS
+  --stack <stack>        Auto-configure formatter, permissions & CLAUDE.md for stack:
+                         ts | python | go | java
+  --lang <lang>          Language of scaffolded template conventions & agents:
+                         vi (default) | en | ja
   --agent <agents>       Target AI agent(s): claude (default) | gemini | copilot | cursor
                          (comma-separated or repeatable; CLAUDE.md is always kept as SSoT)
   --keep-example         Keep sample feature (000-example-reservation)
@@ -180,6 +201,8 @@ export function parseCliArgs(argv) {
         version: { type: "boolean", short: "v" },
         yes: { type: "boolean", short: "y" },
         steward: { type: "string" },
+        stack: { type: "string" },
+        lang: { type: "string" },
         agent: { type: "string", multiple: true },
         "keep-example": { type: "boolean" },
         clean: { type: "boolean" },
@@ -216,6 +239,8 @@ export function parseCliArgs(argv) {
     version: Boolean(values.version),
     yes: Boolean(values.yes),
     steward: values.steward !== undefined ? normalizeSteward(values.steward) : null,
+    stack: values.stack !== undefined ? normalizeStack(values.stack, CliError) : null,
+    lang: values.lang !== undefined ? normalizeLang(values.lang, CliError) : DEFAULT_LANG,
     agents:
       values.agent !== undefined && values.agent.length > 0
         ? normalizeAgents(values.agent, CliError)
@@ -586,11 +611,29 @@ export async function main(argv = process.argv.slice(2)) {
 
     // 5. Customize project configuration
     console.log("==> Customizing project files...");
+    if (opts.lang && opts.lang !== DEFAULT_LANG) {
+      const langUpdated = applyLang(targetDir, templateHandle.dir, opts.lang, ownedFiles);
+      if (langUpdated.length > 0) {
+        console.log(`✓ Applied "${opts.lang}" language pack (${langUpdated.length} files)`);
+      } else {
+        warn(`Language pack "${opts.lang}" had no matching files to apply.`);
+      }
+    }
+
     const stewardApplied = applySteward(targetDir, steward, ownedFiles);
     if (stewardApplied) {
       console.log(`✓ Updated .github/CODEOWNERS with ${steward}`);
     } else if (steward !== DEFAULT_STEWARD) {
       warn(".github/CODEOWNERS was not created by this run — steward not applied.");
+    }
+
+    const stackModified = opts.stack ? applyStack(targetDir, opts.stack, ownedFiles) : [];
+    if (opts.stack) {
+      if (stackModified.length > 0) {
+        console.log(`✓ Configured stack "${opts.stack}" (${stackModified.join(", ")})`);
+      } else {
+        warn(`Stack "${opts.stack}" could not be applied (target files were not created by this run).`);
+      }
     }
 
     const isDefaultClaudeOnly =
@@ -623,6 +666,8 @@ export async function main(argv = process.argv.slice(2)) {
         templateRef: templateHandle.ref,
         cliVersion: pkg.version,
         steward: stewardApplied ? steward : previous?.steward ?? null,
+        stack: stackModified.length > 0 ? opts.stack : previous?.stack ?? null,
+        lang: opts.lang !== DEFAULT_LANG ? opts.lang : previous?.lang ?? null,
         agents: !isDefaultClaudeOnly ? opts.agents : previous?.agents ?? null,
         files: { ...previous?.files, ...hashProjectFiles(targetDir, ownedFiles) },
       })

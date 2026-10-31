@@ -22,6 +22,8 @@ import {
   listAgentInstructionFiles,
   transformBootstrapAgents,
 } from "../agents.js";
+import { DEFAULT_LANG, resolveLangSourcePath } from "../lang.js";
+import { buildFormatHook, transformClaudeMdStack, transformSettingsJson } from "../stack.js";
 
 export const CONFLICT_SUFFIX = ".aspec-new";
 
@@ -94,15 +96,24 @@ export function parseUpdateArgs(argv) {
   };
 }
 
-/** Template content as it would be scaffolded (CODEOWNERS gets the recorded steward; agent files are derived from CLAUDE.md). */
-function readTheirs(templateDir, rel, steward, agents = null) {
+/** Template content as it would be scaffolded (CODEOWNERS gets the recorded steward; localized, stack & agent files resolve via lang/stack/agents). */
+function readTheirs(
+  templateDir,
+  rel,
+  steward,
+  { lang = DEFAULT_LANG, stack = null, agents = null } = {}
+) {
   const agentFiles = listAgentInstructionFiles(agents);
   if (agentFiles.includes(rel)) {
-    const claudeText = fs.readFileSync(path.join(templateDir, "CLAUDE.md"), "utf-8");
+    const claudePath = resolveLangSourcePath(templateDir, "CLAUDE.md", lang);
+    let claudeText = fs.readFileSync(claudePath, "utf-8");
+    if (stack) {
+      claudeText = transformClaudeMdStack(claudeText, stack);
+    }
     const content = buildAgentInstructionContent(claudeText, rel);
     return { buf: Buffer.from(content, "utf-8"), mode: 0o644 };
   }
-  const srcPath = path.join(templateDir, rel);
+  const srcPath = resolveLangSourcePath(templateDir, rel, lang);
   const buf = fs.readFileSync(srcPath);
   const mode = fs.statSync(srcPath).mode;
   if (rel === ".github/CODEOWNERS" && steward) {
@@ -110,6 +121,22 @@ function readTheirs(templateDir, rel, steward, agents = null) {
       buf: Buffer.from(buf.toString("utf-8").split(CODEOWNERS_PLACEHOLDER).join(steward), "utf-8"),
       mode,
     };
+  }
+  if (stack) {
+    if (rel === ".claude/hooks/format.sh") {
+      const hook = buildFormatHook(stack);
+      if (hook) return { buf: Buffer.from(hook, "utf-8"), mode };
+    } else if (rel === ".claude/settings.json") {
+      return {
+        buf: Buffer.from(transformSettingsJson(buf.toString("utf-8"), stack), "utf-8"),
+        mode,
+      };
+    } else if (rel === "CLAUDE.md") {
+      return {
+        buf: Buffer.from(transformClaudeMdStack(buf.toString("utf-8"), stack), "utf-8"),
+        mode,
+      };
+    }
   }
   if (rel === "bootstrap.sh" && Array.isArray(agents) && agents.length > 0) {
     return {
@@ -135,6 +162,8 @@ export function planUpdate({ projectDir, templateDir, manifest }) {
   ]);
   const baseFiles = manifest?.files ?? {};
   const steward = manifest?.steward ?? null;
+  const lang = manifest?.lang ?? DEFAULT_LANG;
+  const stack = manifest?.stack ?? null;
   const all = [...new Set([...templateFiles, ...Object.keys(baseFiles)])].sort();
 
   const entries = [];
@@ -155,7 +184,7 @@ export function planUpdate({ projectDir, templateDir, manifest }) {
       continue;
     }
 
-    const { buf: theirsBuf, mode } = readTheirs(templateDir, rel, steward, agents);
+    const { buf: theirsBuf, mode } = readTheirs(templateDir, rel, steward, { lang, stack, agents });
     const theirs = hashContent(theirsBuf);
     files[rel] = theirs;
 
@@ -254,6 +283,8 @@ export async function runUpdate(argv, { cliVersion }) {
         templateRef: handle.ref,
         cliVersion,
         steward: manifest?.steward ?? null,
+        stack: manifest?.stack ?? null,
+        lang: manifest?.lang ?? null,
         agents: manifest?.agents ?? null,
         files: plan.files,
       })
