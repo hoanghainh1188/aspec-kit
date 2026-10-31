@@ -34,6 +34,7 @@ jobs:
           test ! -e .github/workflows/publish-npm.yml
           test ! -e packages
           test ! -e examples
+          test ! -e CHANGELOG.md
           test -f .claude/scripts/convert-design.py
           python3 .github/scripts/check-template.py
           bash -n bootstrap.sh
@@ -65,7 +66,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node .github/scripts/sync-version.mjs --check
+      - run: |
+          node .github/scripts/sync-version.mjs --check
+          node .github/scripts/sync-version.mjs --extract-notes > /dev/null
       # A branch merge once shipped raw conflict markers in the npm README (fixed in the README-consolidation PR)
       - name: No unresolved merge-conflict markers
         run: |

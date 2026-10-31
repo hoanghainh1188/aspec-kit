@@ -17,6 +17,7 @@ plugin
 assets
 examples
 templates
+CHANGELOG.md
 README.md
 CONTRIBUTING.md
 LICENSE

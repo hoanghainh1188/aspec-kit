@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" width="880" height="420" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">
+  <style>
+    .line { opacity: 0; animation: fadeIn 14s infinite; }
+    .l1  { animation-delay: 0.2s; }
+    .l2  { animation-delay: 1.0s; }
+    .l3  { animation-delay: 2.0s; }
+    .l4  { animation-delay: 2.8s; }
+    .l5  { animation-delay: 3.8s; }
+    .l6  { animation-delay: 4.6s; }
+    .l7  { animation-delay: 5.4s; }
+    .l8  { animation-delay: 6.2s; }
+    .l9  { animation-delay: 7.0s; }
+    .l10 { animation-delay: 7.8s; }
+    .l11 { animation-delay: 8.6s; }
+    .l12 { animation-delay: 9.4s; }
+    @keyframes fadeIn {
+      0%, 4%   { opacity: 0; transform: translateY(3px); }
+      8%, 92%  { opacity: 1; transform: translateY(0); }
+      98%, 100% { opacity: 0; }
+    }
+  </style>
+
+  <!-- Terminal Window Frame -->
+  <rect width="880" height="420" rx="12" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+  <rect width="880" height="38" rx="12" fill="#1e293b"/>
+  <circle cx="22" cy="19" r="6" fill="#ef4444"/>
+  <circle cx="42" cy="19" r="6" fill="#f59e0b"/>
+  <circle cx="62" cy="19" r="6" fill="#10b981"/>
+  <text x="440" y="24" text-anchor="middle" fill="#94a3b8" font-size="13">aspec-kit — Japanese Design Intake to PR &amp; Acceptance Deliverables</text>
+
+  <!-- Step 1: Scaffold -->
+  <g class="line l1">
+    <text x="24" y="70" fill="#38bdf8" font-size="13" font-weight="bold">$</text>
+    <text x="40" y="70" fill="#f8fafc" font-size="13">npx @hoanghainh/aspec-kit init my-jp-project -y --stack ts --lang vi --agent claude,gemini</text>
+  </g>
+  <g class="line l2">
+    <text x="24" y="94" fill="#4ade80" font-size="13">✓ Scaffolded into ./my-jp-project (stack: ts, lang: vi, agents: CLAUDE.md + GEMINI.md)</text>
+  </g>
+
+  <!-- Step 2: Convert Excel / PDF -->
+  <g class="line l3">
+    <text x="24" y="126" fill="#38bdf8" font-size="13" font-weight="bold">$</text>
+    <text x="40" y="126" fill="#f8fafc" font-size="13">npx @hoanghainh/aspec-kit convert docs/02-detail-design/reservation/detail-design.xlsx</text>
+  </g>
+  <g class="line l4">
+    <text x="24" y="150" fill="#4ade80" font-size="13">✓ Converted 4 sheets (画面一覧 / 画面項目定義 / バリデーション / 改訂履歴) + SHA-256 CHANGELOG.md</text>
+  </g>
+
+  <!-- Step 3: /design-to-code pipeline -->
+  <g class="line l5">
+    <text x="24" y="184" fill="#c084fc" font-size="13" font-weight="bold">claude&gt;</text>
+    <text x="88" y="184" fill="#f8fafc" font-size="13">/design-to-code 001-conference-room-reservation</text>
+  </g>
+  <g class="line l6">
+    <text x="40" y="210" fill="#94a3b8" font-size="13">[1/4] design-intake + /qa-sheet</text>
+    <text x="320" y="210" fill="#e2e8f0" font-size="13">→ docs/intake/001-*.md &amp; docs/qa/001-*.csv (質問票)</text>
+  </g>
+  <g class="line l7">
+    <text x="40" y="234" fill="#94a3b8" font-size="13">[2/4] /speckit-specify..tasks</text>
+    <text x="320" y="234" fill="#e2e8f0" font-size="13">→ specs/001-conference-room-reservation/{spec,plan,tasks}.md</text>
+  </g>
+  <g class="line l8">
+    <text x="40" y="258" fill="#94a3b8" font-size="13">[3/4] /speckit-implement</text>
+    <text x="320" y="258" fill="#4ade80" font-size="13">→ src/features/conference-room-reservation/ (Vitest: 6/6 AC tests PASS)</text>
+  </g>
+  <g class="line l9">
+    <text x="40" y="282" fill="#94a3b8" font-size="13">[4/4] Subagent Quality Gates</text>
+    <text x="320" y="282" fill="#4ade80" font-size="13">→ code-reviewer ✓  glossary-steward ✓  security-reviewer ✓</text>
+  </g>
+
+  <!-- Step 4: Japanese Client Acceptance & Reporting -->
+  <g class="line l10">
+    <text x="24" y="318" fill="#c084fc" font-size="13" font-weight="bold">claude&gt;</text>
+    <text x="88" y="318" fill="#f8fafc" font-size="13">/traceability &amp;&amp; /test-spec &amp;&amp; /progress-report</text>
+  </g>
+  <g class="line l11">
+    <text x="40" y="344" fill="#4ade80" font-size="13">✓ docs/traceability.md (要件トレーサビリティ: 6/6 ACs covered, 0 unlinked files)</text>
+  </g>
+  <g class="line l12">
+    <text x="40" y="368" fill="#4ade80" font-size="13">✓ docs/test-specs/001-*.csv (テスト仕様書 UTF-8 BOM) &amp; docs/reports/2026-10-31-*.md (週次進捗報告)</text>
+    <text x="40" y="394" fill="#fbbf24" font-size="13" font-weight="bold">★ Ready for Pull Request &amp; Japanese Client Acceptance (検収)</text>
+  </g>
+</svg>
