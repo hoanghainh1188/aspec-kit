@@ -49,6 +49,10 @@ giúp mọi agent nhất quán ngay từ lượt gọi đầu tiên>
   (`python3 .claude/scripts/traceability.py generate`) sinh: liên kết design/intake → spec AC → task →
   source file → test case và báo động AC thiếu test hoặc code không gắn requirement.
 
+- **`docs/test-specs/`** — テスト仕様書 (đặc tả kiểm thử chuẩn Nhật) do `/test-spec` sinh từ Acceptance
+  Criteria của `spec.md`: `<NNN>-<slug>.md` (bảng 7 cột `No | 観点 | 前提条件 | 手順 | 期待結果 | 結果 | 備考`)
+  + `.csv` (UTF-8 BOM cho Excel, `test_spec.py` sinh và kiểm phủ 100% AC). Xem `docs/test-specs/README.md`.
+
 - **`specs/<feature>/`** — do Spec Kit sinh (spec.md, plan.md, tasks.md). CÓ THỂ tái sinh, không chỉnh tay.
   Nếu sai, sửa docs/ gốc hoặc bổ sung docs/04-decisions/ rồi chạy lại pipeline.
 
