@@ -27,6 +27,7 @@ Production-ready greenfield project template and toolkit for **Claude Code**, sp
 - **BrSE Toolkit for Japanese Client Projects**: The daily chores around the client, built in:
   - `/qa-sheet`: Turns intake ambiguities into a business-polite (敬語) 質問票 (`.md` + Excel-ready CSV) and records the client's answers in `docs/04-decisions/`.
   - `/design-change`: 仕様変更 impact report: what to change and why, which `/speckit-*` steps to re-run, and a Japanese 影響範囲 summary for the client.
+  - `/traceability`: Generates `docs/traceability.md` linking design/intake → spec ACs → tasks → source files → tests, flagging ACs without tests and unlinked code.
   - `/test-spec`: Generates a Japanese-standard テスト仕様書 (`No | 観点 | 前提条件 | 手順 | 期待結果 | 結果 | 備考`) in Markdown + Excel CSV from `spec.md` ACs.
   - `aspec-kit convert`: Converts 詳細設計 Excel/PDF into Markdown that agents can read, without touching the original.
 - **Maintainable Scaffold**: `aspec-kit update` pulls template fixes into existing projects with a 3-way merge, and `aspec-kit doctor` checks tools and guardrails (see [CLI Commands](#cli-commands)).
@@ -122,9 +123,11 @@ The npm CLI has no dependencies and covers the whole lifecycle of a project. Ful
 │   │   ├── design-to-code.md      Hybrid orchestration runbook command
 │   │   ├── design-change.md       /design-change <old> <new>: 仕様変更 impact report
 │   │   ├── qa-sheet.md            質問票: intake ambiguities -> client Q&A sheet, answers -> decisions
+│   │   ├── traceability.md        /traceability: requirement -> AC -> task -> code -> test matrix
 │   │   └── test-spec.md           /test-spec: spec ACs -> Japanese テスト仕様書 (.md + .csv)
 │   └── scripts/
 │       ├── qa_sheet.py            Deterministic part of /qa-sheet (validate, CSV with UTF-8 BOM, ingest)
+│       ├── traceability.py        Deterministic generator & checker for docs/traceability.md
 │       ├── test_spec.py           Deterministic validator & CSV exporter for /test-spec
 │       └── convert-design.py      詳細設計 .xlsx/.pdf -> Markdown (run via uv; used by `aspec-kit convert`)
 ├── docs/

@@ -16,6 +16,8 @@ color: amber
 4. **`specs/<feature>/tasks.md`** — 未完了または形骸化したタスクがないか？
 
 あわせて `docs/05-lessons.md` を確認し、既知のGotchaを再発させている場合は **Blocking** として報告してください。
+また、`.claude/scripts/traceability.py` が存在する場合は `python3 .claude/scripts/traceability.py check --json`
+を実行し、AC ↔ タスク ↔ ソースコード ↔ テストケースの紐付け漏れ（テスト未作成のACや要件に紐付かないコード）を検出してください。
 
 ## 出力形式（3区分）
 
