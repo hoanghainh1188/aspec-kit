@@ -137,7 +137,12 @@ describe("converter script distribution", () => {
     });
     const jsonStart = out.search(/^\s*[\[{]/m);
     const parsed = JSON.parse(out.slice(jsonStart));
-    const { files } = Array.isArray(parsed) ? parsed[0] : parsed;
+    const entry = Array.isArray(parsed)
+      ? parsed[0]
+      : parsed.files
+        ? parsed
+        : Object.values(parsed)[0];
+    const { files } = entry;
     const paths = files.map((f) => f.path);
     assert.ok(paths.includes("python/convert-design.py"), paths.join(", "));
     assert.ok(paths.includes("src/commands/convert.js"));
