@@ -87,6 +87,6 @@ jobs:
         run: |
           npx --yes vitest@3 run src/features/example-reservation examples/01-reservation-app/src/features/conference-room-reservation
           python3 .claude/scripts/traceability.py check --root examples/01-reservation-app --strict
-          python3 .claude/scripts/qa_sheet.py summary examples/01-reservation-app/docs/qa/001-conference-room-reservation.md > /dev/null
+          python3 .claude/scripts/qa_sheet.py export examples/01-reservation-app/docs/qa/001-conference-room-reservation.md
           python3 .claude/scripts/test_spec.py summary examples/01-reservation-app/docs/test-specs/001-conference-room-reservation.md > /dev/null
           python3 .claude/scripts/progress_report.py validate examples/01-reservation-app/docs/reports/2026-10-31-conference-room-reservation.md
