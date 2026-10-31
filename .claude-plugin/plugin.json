@@ -1,6 +1,6 @@
 {
   "name": "aspec-kit",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Hybrid pipeline for spec-driven development with Japanese design documents + Figma. Wraps GitHub Spec Kit with design-intake, code-reviewer, security-reviewer, glossary-steward, and impact-analyzer (仕様変更 /design-change) agents.",
   "author": "hoanghainh1188",
   "homepage": "https://github.com/hoanghainh1188/aspec-kit",

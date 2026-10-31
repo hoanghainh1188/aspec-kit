@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-31
+
+### Fixed
+
+- **CLI Protected Paths**: Protect `docs/changes/`, `docs/qa/`, and `tests/` in `aspec-kit update` so project-owned change impact reports, Q&A sheets, and automated test suites are never overwritten during template upgrades ([#54](https://github.com/hoanghainh1188/aspec-kit/pull/54)).
+- **Bootstrap Recovery**: Restore `.claude/commands/` and `.claude/scripts/` completely in `bootstrap.sh` after `specify init`, ensuring `/qa-sheet`, `/design-change`, `convert-design.py`, and other commands/scripts are preserved ([#54](https://github.com/hoanghainh1188/aspec-kit/pull/54)).
+- **Documentation & Scaffolding Alignment**:
+  - Update generated project `README.md` stub with latest `[SKILL]` / `[PAUSE]` workflow and maintenance commands (`doctor`, `update`, `convert`).
+  - Align `plugin/README.md`, `CLAUDE.md`, `docs/TEAM-WORKFLOW.md`, and `docs/PRODUCTION-READINESS.md` with `/design-change`, `/qa-sheet`, and `aspec-kit doctor`.
+  - Add `convert-design.py` check to CI smoke tests.
+
 ## [0.3.0] - 2026-10-31
 
 ### Added
