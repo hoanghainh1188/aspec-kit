@@ -12,13 +12,17 @@ import {
   CliError,
   DEFAULT_EXCLUDES,
   DEFAULT_LANG,
+  STACK_CONFIGS,
   SUPPORTED_LANGS,
+  SUPPORTED_STACKS,
   applyLang,
+  applyStack,
   applySteward,
   copyTemplate,
   isExcluded,
   listTemplateFiles,
   normalizeLang,
+  normalizeStack,
   normalizeSteward,
   parseCliArgs,
   readIgnoreFile,
@@ -132,6 +136,16 @@ describe("parseCliArgs", () => {
     }
     assert.throws(() => parseCliArgs(["--lang", "fr"]), CliError);
     assert.throws(() => parseCliArgs(["--lang"]), CliError);
+  });
+
+  test("--stack is parsed and validated", () => {
+    assert.equal(parseCliArgs([]).stack, null);
+    for (const s of SUPPORTED_STACKS) {
+      assert.equal(parseCliArgs(["--stack", s]).stack, s);
+      assert.equal(parseCliArgs(["--stack", s.toUpperCase()]).stack, s);
+    }
+    assert.throws(() => parseCliArgs(["--stack", "ruby"]), CliError);
+    assert.throws(() => parseCliArgs(["--stack"]), CliError);
   });
 });
 
@@ -260,6 +274,46 @@ describe("customization", () => {
     assert.equal(writeProjectReadme(tmp, "my-app", "1.0.0"), false);
     assert.equal(fs.readFileSync(path.join(tmp, "README.md"), "utf-8"), "mine");
   });
+
+  test("applyStack configures format.sh, settings.json and CLAUDE.md for each stack", () => {
+    for (const stack of SUPPORTED_STACKS) {
+      const dest = path.join(tmp, `stack-${stack}`);
+      fs.mkdirSync(path.join(dest, ".claude/hooks"), { recursive: true });
+      fs.copyFileSync(path.join(REPO_ROOT, ".claude/hooks/format.sh"), path.join(dest, ".claude/hooks/format.sh"));
+      fs.copyFileSync(path.join(REPO_ROOT, ".claude/settings.json"), path.join(dest, ".claude/settings.json"));
+      fs.copyFileSync(path.join(REPO_ROOT, "CLAUDE.md"), path.join(dest, "CLAUDE.md"));
+
+      const owned = new Set([".claude/hooks/format.sh", ".claude/settings.json", "CLAUDE.md"]);
+      const modified = applyStack(dest, stack, owned);
+      assert.deepEqual(modified, [".claude/hooks/format.sh", ".claude/settings.json", "CLAUDE.md"]);
+
+      const hookText = fs.readFileSync(path.join(dest, ".claude/hooks/format.sh"), "utf-8");
+      assert.equal(isFormatHookConfigured(hookText), true, `format.sh for ${stack} must be active`);
+      assert.ok(hookText.includes(STACK_CONFIGS[stack].formatCmd));
+
+      const settings = JSON.parse(fs.readFileSync(path.join(dest, ".claude/settings.json"), "utf-8"));
+      for (const allowEntry of STACK_CONFIGS[stack].allow) {
+        assert.ok(settings.permissions.allow.includes(allowEntry), `${stack} missing allow: ${allowEntry}`);
+      }
+      if (stack !== "ts") {
+        assert.ok(!settings.permissions.allow.includes("Bash(npm run lint)"), `${stack} should replace npm allow`);
+        assert.ok(!settings.permissions.ask.includes("Bash(npm install *)"), `${stack} should replace npm ask`);
+      }
+
+      const claudeMd = fs.readFileSync(path.join(dest, "CLAUDE.md"), "utf-8");
+      assert.ok(claudeMd.includes(STACK_CONFIGS[stack].label), `CLAUDE.md for ${stack} should include stack label`);
+      assert.ok(!claudeMd.includes("<Điền khi bắt đầu code"), `CLAUDE.md placeholder should be replaced for ${stack}`);
+    }
+  });
+
+  test("applyStack skips files not owned by the current run", () => {
+    const dest = path.join(tmp, "unowned");
+    writeFile(dest, ".claude/hooks/format.sh", "# custom\n");
+    writeFile(dest, ".claude/settings.json", '{"custom":true}');
+    writeFile(dest, "CLAUDE.md", "# custom");
+    assert.deepEqual(applyStack(dest, "python", new Set()), []);
+    assert.equal(fs.readFileSync(path.join(dest, ".claude/hooks/format.sh"), "utf-8"), "# custom\n");
+  });
 });
 
 // End-to-end against the real repository as local template ──────────────────
@@ -337,6 +391,28 @@ describe("CLI end-to-end (local template)", () => {
         stdio: "pipe",
       });
     }
+  });
+
+  test("init --stack go configures formatter, permissions, CLAUDE.md and manifest", () => {
+    run(["init", "go-app", "-y", "--clean", "--steward", "@lead", "--stack", "go"], tmp);
+    const proj = path.join(tmp, "go-app");
+    const manifest = JSON.parse(fs.readFileSync(path.join(proj, ".aspec-kit.json"), "utf-8"));
+    assert.equal(manifest.stack, "go");
+
+    const hook = fs.readFileSync(path.join(proj, ".claude/hooks/format.sh"), "utf-8");
+    assert.match(hook, /gofmt -w "\$FILE"/);
+    assert.equal(isFormatHookConfigured(hook), true);
+
+    const settings = JSON.parse(fs.readFileSync(path.join(proj, ".claude/settings.json"), "utf-8"));
+    assert.ok(settings.permissions.allow.includes("Bash(go test ./...)"));
+    assert.ok(!settings.permissions.allow.includes("Bash(npm run lint)"));
+
+    const claudeMd = fs.readFileSync(path.join(proj, "CLAUDE.md"), "utf-8");
+    assert.match(claudeMd, /golangci-lint run/);
+
+    execFileSync("python3", [path.join(proj, ".github/scripts/check-template.py")], {
+      stdio: "pipe",
+    });
   });
 });
 
@@ -436,6 +512,32 @@ describe("aspec-kit update", () => {
     assert.doesNotMatch(out, /Conflicts/);
     assert.equal(read(proj, "CLAUDE.md"), "# English rules v2");
     assert.equal(manifestOf(proj).lang, "en");
+  });
+
+  test("update preserves --stack customization when template files change", () => {
+    const v1 = path.join(tmp, "stack-v1");
+    makeTemplate(v1);
+    fs.mkdirSync(path.join(v1, ".claude/hooks"), { recursive: true });
+    fs.copyFileSync(path.join(REPO_ROOT, ".claude/hooks/format.sh"), path.join(v1, ".claude/hooks/format.sh"));
+    fs.copyFileSync(path.join(REPO_ROOT, ".claude/settings.json"), path.join(v1, ".claude/settings.json"));
+    fs.copyFileSync(path.join(REPO_ROOT, "CLAUDE.md"), path.join(v1, "CLAUDE.md"));
+
+    runWith(v1, ["init", "py-proj", "-y", "--clean", "--stack", "python"], tmp);
+    const proj = path.join(tmp, "py-proj");
+
+    const v2 = path.join(tmp, "stack-v2");
+    makeTemplate(v2);
+    fs.mkdirSync(path.join(v2, ".claude/hooks"), { recursive: true });
+    fs.copyFileSync(path.join(REPO_ROOT, ".claude/hooks/format.sh"), path.join(v2, ".claude/hooks/format.sh"));
+    fs.copyFileSync(path.join(REPO_ROOT, ".claude/settings.json"), path.join(v2, ".claude/settings.json"));
+    const v2Claude = fs.readFileSync(path.join(REPO_ROOT, "CLAUDE.md"), "utf-8") + "\n<!-- v2 note -->\n";
+    writeFile(v2, "CLAUDE.md", v2Claude);
+
+    const out = runWith(v2, ["update"], proj);
+    assert.doesNotMatch(out, /Conflicts/);
+    assert.match(read(proj, "CLAUDE.md"), /<!-- v2 note -->/);
+    assert.match(read(proj, "CLAUDE.md"), /Python 3/);
+    assert.equal(manifestOf(proj).stack, "python");
   });
 
   test("local-only changes are kept; changes on both sides become conflicts", () => {

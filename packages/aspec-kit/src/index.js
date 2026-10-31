@@ -10,8 +10,18 @@ import { MANIFEST_FILE, buildManifest, hashProjectFiles, readManifest, writeMani
 import { doctorCommand } from "./commands/doctor.js";
 import { runConvert } from "./commands/convert.js";
 import { DEFAULT_LANG, SUPPORTED_LANGS, applyLang, normalizeLang } from "./lang.js";
+import { STACK_CONFIGS, SUPPORTED_STACKS, applyStack, normalizeStack } from "./stack.js";
 
-export { DEFAULT_LANG, SUPPORTED_LANGS, applyLang, normalizeLang };
+export {
+  DEFAULT_LANG,
+  STACK_CONFIGS,
+  SUPPORTED_LANGS,
+  SUPPORTED_STACKS,
+  applyLang,
+  applyStack,
+  normalizeLang,
+  normalizeStack,
+};
 
 const GITHUB_OWNER_REPO = "hoanghainh1188/aspec-kit";
 const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER_REPO}.git`;
@@ -99,6 +109,8 @@ Options:
   -h, --help             Display this help message
   -y, --yes              Use default settings without interactive prompts
   --steward <handle>     GitHub handle (or @org/team, or email) for .github/CODEOWNERS
+  --stack <stack>        Auto-configure formatter, permissions & CLAUDE.md for stack:
+                         ts | python | go | java
   --lang <lang>          Language of scaffolded template conventions & agents:
                          vi (default) | en | ja
   --keep-example         Keep sample feature (000-example-reservation)
@@ -175,6 +187,7 @@ export function parseCliArgs(argv) {
         version: { type: "boolean", short: "v" },
         yes: { type: "boolean", short: "y" },
         steward: { type: "string" },
+        stack: { type: "string" },
         lang: { type: "string" },
         "keep-example": { type: "boolean" },
         clean: { type: "boolean" },
@@ -211,6 +224,7 @@ export function parseCliArgs(argv) {
     version: Boolean(values.version),
     yes: Boolean(values.yes),
     steward: values.steward !== undefined ? normalizeSteward(values.steward) : null,
+    stack: values.stack !== undefined ? normalizeStack(values.stack, CliError) : null,
     lang: values.lang !== undefined ? normalizeLang(values.lang, CliError) : DEFAULT_LANG,
     // null = ask the user; true/false = decided by flag
     keepExample: values["keep-example"] ? true : values.clean ? false : null,
@@ -594,6 +608,15 @@ export async function main(argv = process.argv.slice(2)) {
       warn(".github/CODEOWNERS was not created by this run — steward not applied.");
     }
 
+    const stackModified = opts.stack ? applyStack(targetDir, opts.stack, ownedFiles) : [];
+    if (opts.stack) {
+      if (stackModified.length > 0) {
+        console.log(`✓ Configured stack "${opts.stack}" (${stackModified.join(", ")})`);
+      } else {
+        warn(`Stack "${opts.stack}" could not be applied (target files were not created by this run).`);
+      }
+    }
+
     if (!keepExample) {
       console.log("==> Removing sample feature...");
       removeSampleFeature(targetDir, ownedFiles);
@@ -617,6 +640,7 @@ export async function main(argv = process.argv.slice(2)) {
         templateRef: templateHandle.ref,
         cliVersion: pkg.version,
         steward: stewardApplied ? steward : previous?.steward ?? null,
+        stack: stackModified.length > 0 ? opts.stack : previous?.stack ?? null,
         lang: opts.lang !== DEFAULT_LANG ? opts.lang : previous?.lang ?? null,
         files: { ...previous?.files, ...hashProjectFiles(targetDir, ownedFiles) },
       })

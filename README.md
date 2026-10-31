@@ -49,7 +49,7 @@ npm init @hoanghainh/aspec-kit my-project
 
 The CLI automatically fetches the latest template, interactively configures `.github/CODEOWNERS` with your Steward handle, and optionally cleans up the reference sample feature.
 
-Options: `-y/--yes`, `--steward <handle>`, `--lang vi|en|ja`, `--clean`, `--force`, `--template-ref <ref>`, `--help` (see [`packages/aspec-kit/README.md`](packages/aspec-kit/README.md)). Existing files are never overwritten unless `--force` is passed, and the template is pinned to the tag matching the CLI version.
+Options: `-y/--yes`, `--steward <handle>`, `--stack ts|python|go|java`, `--lang vi|en|ja`, `--clean`, `--force`, `--template-ref <ref>`, `--help` (see [`packages/aspec-kit/README.md`](packages/aspec-kit/README.md)). Existing files are never overwritten unless `--force` is passed, and the template is pinned to the tag matching the CLI version.
 
 After scaffolding:
 ```bash

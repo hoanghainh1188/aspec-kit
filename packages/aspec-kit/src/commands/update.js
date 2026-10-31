@@ -18,6 +18,7 @@ import {
 } from "../index.js";
 import { MANIFEST_FILE, buildManifest, hashContent, hashFile, readManifest, writeManifest } from "../manifest.js";
 import { DEFAULT_LANG, resolveLangSourcePath } from "../lang.js";
+import { buildFormatHook, transformClaudeMdStack, transformSettingsJson } from "../stack.js";
 
 export const CONFLICT_SUFFIX = ".aspec-new";
 
@@ -90,12 +91,22 @@ export function parseUpdateArgs(argv) {
   };
 }
 
-/** Template content as it would be scaffolded (CODEOWNERS gets the recorded steward; localized files resolve via lang). */
-function readTheirs(templateDir, rel, steward, lang = DEFAULT_LANG) {
+/** Template content as it would be scaffolded (CODEOWNERS gets the recorded steward; localized & stack files resolve via lang/stack). */
+function readTheirs(templateDir, rel, steward, { lang = DEFAULT_LANG, stack = null } = {}) {
   const srcPath = resolveLangSourcePath(templateDir, rel, lang);
   const buf = fs.readFileSync(srcPath);
   if (rel === ".github/CODEOWNERS" && steward) {
     return Buffer.from(buf.toString("utf-8").split(CODEOWNERS_PLACEHOLDER).join(steward), "utf-8");
+  }
+  if (stack) {
+    if (rel === ".claude/hooks/format.sh") {
+      const hook = buildFormatHook(stack);
+      if (hook) return Buffer.from(hook, "utf-8");
+    } else if (rel === ".claude/settings.json") {
+      return Buffer.from(transformSettingsJson(buf.toString("utf-8"), stack), "utf-8");
+    } else if (rel === "CLAUDE.md") {
+      return Buffer.from(transformClaudeMdStack(buf.toString("utf-8"), stack), "utf-8");
+    }
   }
   return buf;
 }
@@ -114,6 +125,7 @@ export function planUpdate({ projectDir, templateDir, manifest }) {
   const baseFiles = manifest?.files ?? {};
   const steward = manifest?.steward ?? null;
   const lang = manifest?.lang ?? DEFAULT_LANG;
+  const stack = manifest?.stack ?? null;
   const all = [...new Set([...templateFiles, ...Object.keys(baseFiles)])].sort();
 
   const entries = [];
@@ -134,7 +146,7 @@ export function planUpdate({ projectDir, templateDir, manifest }) {
       continue;
     }
 
-    const theirsBuf = readTheirs(templateDir, rel, steward, lang);
+    const theirsBuf = readTheirs(templateDir, rel, steward, { lang, stack });
     const theirs = hashContent(theirsBuf);
     const mode = fs.statSync(path.join(templateDir, rel)).mode;
     files[rel] = theirs;
@@ -234,6 +246,7 @@ export async function runUpdate(argv, { cliVersion }) {
         templateRef: handle.ref,
         cliVersion,
         steward: manifest?.steward ?? null,
+        stack: manifest?.stack ?? null,
         lang: manifest?.lang ?? null,
         files: plan.files,
       })
