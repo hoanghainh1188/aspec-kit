@@ -198,11 +198,13 @@ describe("template copy", () => {
     const src = path.join(tmp, "tpl");
     makeTemplate(src);
     writeFile(src, "examples/01-reservation-app/README.md", "example");
+    writeFile(src, "CHANGELOG.md", "# kit changelog");
     const files = listTemplateFiles(src, [...DEFAULT_EXCLUDES, ...readIgnoreFile(src)]);
     for (const banned of [
       ".github/workflows/publish-npm.yml",
       "packages/aspec-kit/package.json",
       "examples/01-reservation-app/README.md",
+      "CHANGELOG.md",
       "README.md",
       "LICENSE",
       ".aspecignore",

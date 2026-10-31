@@ -1,0 +1,13 @@
+{"version": 2, "width": 92, "height": 26, "timestamp": 1761888000, "title": "aspec-kit: init + /design-to-code + Japanese acceptance deliverables", "env": {"SHELL": "/bin/zsh", "TERM": "xterm-256color"}}
+[0.2, "o", "\u001b[36m$\u001b[0m npx @hoanghainh/aspec-kit init my-jp-project -y --stack ts --lang vi --agent claude,gemini\r\n"]
+[0.9, "o", "\u001b[36m✓\u001b[0m Scaffolded 48 files into ./my-jp-project (stack: ts, lang: vi, agents: claude, gemini)\r\n"]
+[1.5, "o", "\u001b[36m$\u001b[0m npx @hoanghainh/aspec-kit convert docs/02-detail-design/reservation/detail-design.xlsx\r\n"]
+[2.2, "o", "\u001b[32m✓\u001b[0m Converted detail-design.xlsx (4 sheets) -> docs/02-detail-design/reservation/*.md\r\n"]
+[2.9, "o", "\u001b[36mclaude>\u001b[0m /design-to-code 001-conference-room-reservation\r\n"]
+[3.6, "o", "  [1/7] design-intake   -> docs/intake/001-conference-room-reservation.md\r\n"]
+[4.2, "o", "  [2/7] /qa-sheet       -> docs/qa/001-conference-room-reservation.csv (UTF-8 BOM)\r\n"]
+[4.8, "o", "  [3/7] /speckit-*      -> specs/001-conference-room-reservation/{spec,plan,tasks}.md\r\n"]
+[5.5, "o", "  [4/7] implement+test  -> src/features/conference-room-reservation/ (6/6 tests PASS)\r\n"]
+[6.2, "o", "  [5/7] /traceability   -> docs/traceability.md (100% AC 1..6 covered)\r\n"]
+[6.8, "o", "  [6/7] /test-spec      -> docs/test-specs/001-conference-room-reservation.csv (テスト仕様書)\r\n"]
+[7.4, "o", "  [7/7] /progress-report -> docs/reports/2026-10-31-conference-room-reservation.md (進捗報告)\r\n"]

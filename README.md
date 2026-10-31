@@ -13,6 +13,12 @@
 
 Production-ready greenfield project template and toolkit for **Claude Code**, specifically engineered for **Bridge Software Engineers (BrSE)** and development teams working with Japanese clients where upstream design artifacts come from **Basic Design (基本設計)**, **Detail Design (詳細設計)**, and **Figma**.
 
+<p align="center">
+  <img src="assets/aspec-kit-demo.svg" alt="aspec-kit terminal workflow demo" width="100%">
+</p>
+
+> See [`CHANGELOG.md`](CHANGELOG.md) for release history, [`examples/README.md`](examples/README.md) for the end-to-end walkthrough, or replay the terminal session with `asciinema play assets/aspec-kit-demo.cast`.
+
 ---
 
 ## Key Highlights

@@ -27,12 +27,13 @@ jobs:
       - name: Upgrade to latest npm (required for native OIDC Trusted Publishing)
         run: npm install -g npm@latest
 
-      - name: Verify git tag matches committed versions
+      - name: Verify git tag matches committed versions and extract CHANGELOG release notes
         run: |
           # The CLI downloads its template from tag v<package.json version>, so the tagged
           # commit itself must carry that version. Fail instead of patching it in CI only.
           # Fix locally: node .github/scripts/sync-version.mjs <version> → commit → re-tag.
           node .github/scripts/sync-version.mjs --check "$GITHUB_REF_NAME"
+          node .github/scripts/sync-version.mjs --extract-notes "$GITHUB_REF_NAME" > "$RUNNER_TEMP/release-notes.md"
 
       - name: Verify template integrity before release
         run: |
@@ -52,6 +53,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          body_path: ${{ runner.temp }}/release-notes.md
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
