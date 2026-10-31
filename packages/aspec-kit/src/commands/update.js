@@ -17,6 +17,11 @@ import {
   readIgnoreFile,
 } from "../index.js";
 import { MANIFEST_FILE, buildManifest, hashContent, hashFile, readManifest, writeManifest } from "../manifest.js";
+import {
+  buildAgentInstructionContent,
+  listAgentInstructionFiles,
+  transformBootstrapAgents,
+} from "../agents.js";
 
 export const CONFLICT_SUFFIX = ".aspec-new";
 
@@ -89,13 +94,30 @@ export function parseUpdateArgs(argv) {
   };
 }
 
-/** Template content as it would be scaffolded (CODEOWNERS gets the recorded steward). */
-function readTheirs(templateDir, rel, steward) {
-  const buf = fs.readFileSync(path.join(templateDir, rel));
-  if (rel === ".github/CODEOWNERS" && steward) {
-    return Buffer.from(buf.toString("utf-8").split(CODEOWNERS_PLACEHOLDER).join(steward), "utf-8");
+/** Template content as it would be scaffolded (CODEOWNERS gets the recorded steward; agent files are derived from CLAUDE.md). */
+function readTheirs(templateDir, rel, steward, agents = null) {
+  const agentFiles = listAgentInstructionFiles(agents);
+  if (agentFiles.includes(rel)) {
+    const claudeText = fs.readFileSync(path.join(templateDir, "CLAUDE.md"), "utf-8");
+    const content = buildAgentInstructionContent(claudeText, rel);
+    return { buf: Buffer.from(content, "utf-8"), mode: 0o644 };
   }
-  return buf;
+  const srcPath = path.join(templateDir, rel);
+  const buf = fs.readFileSync(srcPath);
+  const mode = fs.statSync(srcPath).mode;
+  if (rel === ".github/CODEOWNERS" && steward) {
+    return {
+      buf: Buffer.from(buf.toString("utf-8").split(CODEOWNERS_PLACEHOLDER).join(steward), "utf-8"),
+      mode,
+    };
+  }
+  if (rel === "bootstrap.sh" && Array.isArray(agents) && agents.length > 0) {
+    return {
+      buf: Buffer.from(transformBootstrapAgents(buf.toString("utf-8"), agents), "utf-8"),
+      mode,
+    };
+  }
+  return { buf, mode };
 }
 
 /**
@@ -106,9 +128,11 @@ function readTheirs(templateDir, rel, steward) {
  */
 export function planUpdate({ projectDir, templateDir, manifest }) {
   const excludes = [...new Set([...DEFAULT_EXCLUDES, ...readIgnoreFile(templateDir)])];
-  const templateFiles = new Set(
-    listTemplateFiles(templateDir, excludes).filter((rel) => !rel.endsWith(CONFLICT_SUFFIX))
-  );
+  const agents = manifest?.agents ?? null;
+  const templateFiles = new Set([
+    ...listTemplateFiles(templateDir, excludes).filter((rel) => !rel.endsWith(CONFLICT_SUFFIX)),
+    ...listAgentInstructionFiles(agents),
+  ]);
   const baseFiles = manifest?.files ?? {};
   const steward = manifest?.steward ?? null;
   const all = [...new Set([...templateFiles, ...Object.keys(baseFiles)])].sort();
@@ -131,9 +155,8 @@ export function planUpdate({ projectDir, templateDir, manifest }) {
       continue;
     }
 
-    const theirsBuf = readTheirs(templateDir, rel, steward);
+    const { buf: theirsBuf, mode } = readTheirs(templateDir, rel, steward, agents);
     const theirs = hashContent(theirsBuf);
-    const mode = fs.statSync(path.join(templateDir, rel)).mode;
     files[rel] = theirs;
 
     let action;
@@ -231,6 +254,7 @@ export async function runUpdate(argv, { cliVersion }) {
         templateRef: handle.ref,
         cliVersion,
         steward: manifest?.steward ?? null,
+        agents: manifest?.agents ?? null,
         files: plan.files,
       })
     );

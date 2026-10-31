@@ -17,6 +17,13 @@ if ! [[ "$SPEC_KIT_REF" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
   echo "SPEC_KIT_REF không hợp lệ: '$SPEC_KIT_REF'"
   exit 1
 fi
+# Target integration(s) for `specify init` (comma- or space-separated: claude, gemini, copilot, cursor).
+# Can be overridden via SPEC_KIT_INTEGRATION env var when running bootstrap.sh.
+SPEC_KIT_INTEGRATION="${SPEC_KIT_INTEGRATION:-claude}"
+if ! [[ "$SPEC_KIT_INTEGRATION" =~ ^[A-Za-z0-9_,[:space:]-]+$ ]]; then
+  echo "SPEC_KIT_INTEGRATION không hợp lệ: '$SPEC_KIT_INTEGRATION'"
+  exit 1
+fi
 SPEC_KIT_SOURCE="git+https://github.com/github/spec-kit.git@${SPEC_KIT_REF}"
 SPEC_KIT_INIT_RAN=0
 
@@ -42,11 +49,15 @@ else
 
   # --force: bắt buộc khi init vào thư mục đã có file (template luôn không rỗng),
   # nếu thiếu, specify sẽ hỏi xác nhận và treo dưới `set -euo pipefail`.
-  if command -v uvx >/dev/null 2>&1; then
-    uvx --from "$SPEC_KIT_SOURCE" specify init . --force --integration claude
-  else
-    pipx run --spec "$SPEC_KIT_SOURCE" specify init . --force --integration claude
-  fi
+  INTEGRATIONS=$(echo "$SPEC_KIT_INTEGRATION" | tr ',' ' ')
+  for target_agent in $INTEGRATIONS; do
+    echo "    -> specify init --integration ${target_agent}"
+    if command -v uvx >/dev/null 2>&1; then
+      uvx --from "$SPEC_KIT_SOURCE" specify init . --force --integration "$target_agent"
+    else
+      pipx run --spec "$SPEC_KIT_SOURCE" specify init . --force --integration "$target_agent"
+    fi
+  done
   SPEC_KIT_INIT_RAN=1
 
   # Merge lại: nếu specify init ghi đè settings.json / agents / commands của template,
