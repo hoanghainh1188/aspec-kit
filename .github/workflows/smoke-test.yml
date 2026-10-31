@@ -32,6 +32,7 @@ jobs:
           test -f .claude/scripts/traceability.py
           test -f .claude/scripts/test_spec.py
           test -f .claude/scripts/progress_report.py
+          test -f .claude/scripts/convert-design.py
           test -f docs/00-glossary.md
           test -f docs/05-lessons.md
           test -f docs/CONSTITUTION_APPEND.md

@@ -6,6 +6,10 @@ Danh sách dưới biến chúng thành gate thật. Làm **một lần khi lên
 
 > Vì sao tách ra đây: `check-template.py` + `template-smoke-test` chỉ kiểm *tính nhất quán của chính
 > template*, KHÔNG đụng tới code dự án bạn sinh ra. Enforcement code là việc của CI dự án — bên dưới.
+>
+> 💡 **Kiểm tra nhanh tự động:** chạy `npx @hoanghainh/aspec-kit doctor` (hoặc `--json` trong CI) để
+> kiểm tra công cụ môi trường, drift của `/speckit-*` skills, `.github/CODEOWNERS`, `.claude/hooks/format.sh`
+> và branch protection trên `main`.
 
 ## 1. Bật gác cổng con người (load-bearing) — bắt buộc
 

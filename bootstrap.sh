@@ -4,7 +4,7 @@
 #
 # Việc mà script làm:
 #   1. Chạy `specify init .` để tạo .specify/ + slash command của Spec Kit
-#   2. Merge cấu trúc Spec Kit vào .claude/ đã có sẵn (giữ agents + settings + design-to-code command)
+#   2. Merge cấu trúc Spec Kit vào .claude/ đã có sẵn (giữ agents, hooks, commands, scripts và settings)
 #   3. In hướng dẫn bước tiếp theo
 
 set -euo pipefail
@@ -60,15 +60,15 @@ else
   done
   SPEC_KIT_INIT_RAN=1
 
-  # Merge lại: nếu specify init ghi đè settings.json / agents / commands của template,
+  # Merge lại: nếu specify init ghi đè settings.json / agents / commands / scripts của template,
   # khôi phục từ backup rồi merge command speckit.* vào
   if [ -d .claude.template-backup ]; then
-    # Giữ nguyên agents, hooks và settings của template
-    cp -r .claude.template-backup/agents/* .claude/agents/ 2>/dev/null || true
+    # Giữ nguyên agents, hooks, commands, scripts và settings của template
+    mkdir -p .claude/agents && cp -r .claude.template-backup/agents/* .claude/agents/ 2>/dev/null || true
     mkdir -p .claude/hooks && cp -r .claude.template-backup/hooks/* .claude/hooks/ 2>/dev/null || true
+    mkdir -p .claude/commands && cp -r .claude.template-backup/commands/* .claude/commands/ 2>/dev/null || true
+    mkdir -p .claude/scripts && cp -r .claude.template-backup/scripts/* .claude/scripts/ 2>/dev/null || true
     cp .claude.template-backup/settings.json .claude/settings.json 2>/dev/null || true
-    # Command của template (design-to-code) không bị Spec Kit đụng tới, nhưng copy lại cho chắc
-    cp .claude.template-backup/commands/design-to-code.md .claude/commands/ 2>/dev/null || true
     rm -rf .claude.template-backup
   fi
 fi

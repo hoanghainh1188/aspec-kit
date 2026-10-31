@@ -131,7 +131,7 @@ Then `.aspec-kit.json` is refreshed. Resolve each conflict by merging `<file>.as
 and deleting the `.aspec-new` file. `--dry-run` prints the plan and writes nothing.
 
 **Never touched:** client design docs (`docs/01-*`, `docs/02-*`, `docs/03-*`), `docs/00-glossary.md`,
-`docs/04-decisions/`, `docs/05-lessons.md`, `docs/intake/`, `specs/` and `src/`.
+`docs/04-decisions/`, `docs/05-lessons.md`, `docs/intake/`, `docs/changes/`, `docs/qa/`, `specs/`, `src/` and `tests/`.
 
 > Projects created before `.aspec-kit.json` existed have no recorded base, so every file that differs
 > from the new template is treated as locally modified (reported as a conflict with an `.aspec-new`

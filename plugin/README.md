@@ -27,7 +27,7 @@ Vì plugin không tự tạo scaffold, dự án của bạn cần có sẵn:
 
 1. **Cài Spec Kit**: chạy `uvx --from git+https://github.com/github/spec-kit.git specify init . --integration claude` trong repo dự án.
 2. **Tạo constitution**: chạy `/speckit-constitution` trong Claude Code.
-3. **Cấu trúc docs/** cho tài liệu Nhật (khuyên dùng, không bắt buộc):
+3. **Cấu trúc `docs/`** cho tài liệu Nhật và bộ nhớ dự án (khuyên dùng, không bắt buộc):
    ```
    docs/
    ├── 00-glossary.md
@@ -35,20 +35,24 @@ Vì plugin không tự tạo scaffold, dự án của bạn cần có sẵn:
    ├── 02-detail-design/
    ├── 03-ui/
    ├── 04-decisions/
-   └── intake/
+   │   └── INDEX.md
+   ├── 05-lessons.md
+   ├── intake/
+   ├── changes/
+   └── qa/
    ```
-4. **Figma MCP server** (nếu muốn design-intake đọc Figma tự động).
+4. **Figma MCP server** (nếu muốn `design-intake` đọc Figma tự động).
 
-Nếu bạn muốn tất cả những thứ trên được tạo tự động, hãy dùng **chế độ template repo** thay vì plugin — xem README chính ở gốc repo.
+Nếu bạn muốn tất cả những thứ trên được tạo tự động, hãy dùng **npm CLI (`npx @hoanghainh/aspec-kit init`)** hoặc **chế độ template repo** thay vì plugin — xem README chính ở gốc repo.
 
-## Khi nào chọn plugin vs template?
+## Khi nào chọn plugin vs npm CLI / template?
 
 | Tình huống | Chọn |
 |---|---|
-| Dự án mới hoàn toàn | Template repo (có sẵn scaffold) |
+| Dự án mới hoàn toàn | npm CLI (`npx @hoanghainh/aspec-kit init`) hoặc Template repo |
 | Dự án đã có, muốn thêm workflow spec-driven | Plugin (nhẹ, không đụng cấu trúc sẵn) |
 | Nhiều dự án cần dùng chung 1 bộ agent | Plugin (cài vào user scope, mọi project dùng chung) |
-| Dự án 1 người, ít quan tâm chia sẻ | Template repo (đơn giản hơn) |
+| Dự án 1 người, cần đầy đủ script + CI + hooks | npm CLI / Template repo (đơn giản, trọn gói) |
 
 ## Gỡ cài đặt
 

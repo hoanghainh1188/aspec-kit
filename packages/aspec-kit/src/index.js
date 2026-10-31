@@ -394,16 +394,27 @@ export function writeProjectReadme(targetDir, projectName, cliVersion) {
 ## Getting started
 
 \`\`\`bash
-bash bootstrap.sh   # install Spec Kit skills + hooks (run once)
-claude              # then run /speckit-constitution
+bash bootstrap.sh                          # install Spec Kit skills + hooks (run once)
+npx @hoanghainh/aspec-kit doctor           # verify tools, skills & guardrails
+claude                                     # then run /speckit-constitution
 \`\`\`
 
 ## Feature workflow
 
-1. Create a GitHub Issue → branch \`NNN-<slug>\` (NNN = issue number, zero-padded to 3 digits).
+1. Create a GitHub Issue → branch \`NNN-<slug>\` (\`NNN\` = issue number, zero-padded to 3 digits).
 2. Put upstream design docs in \`docs/01-basic-design/<slug>/\`, \`docs/02-detail-design/<slug>/\`,
-   \`docs/03-ui/<slug>/\`.
-3. Run \`/design-to-code\` in Claude Code and follow the [HANDOFF] / [PAUSE] steps.
+   \`docs/03-ui/<slug>/\` (convert \`.xlsx\`/\`.pdf\` with \`npx @hoanghainh/aspec-kit convert <file>\`).
+3. Run \`/design-to-code\` in Claude Code — Claude invokes the \`/speckit-*\` skills via the Skill tool
+   and pauses at every \`[PAUSE]\` checkpoint (falling back to \`[HANDOFF]\` only if a skill is unavailable).
+4. Ambiguities for the client → \`/qa-sheet <NNN>-<slug>\` (generates \`docs/qa/<NNN>-<slug>.md\` + \`.csv\`),
+   then \`/qa-sheet --ingest docs/qa/<NNN>-<slug>.csv\` when answered.
+5. Client design changes (仕様変更) → \`/design-change <old> <new>\` (writes impact report to \`docs/changes/\`).
+
+## Project maintenance
+
+- \`npx @hoanghainh/aspec-kit doctor [--json]\` — check tools, Spec Kit skills, CODEOWNERS & branch protection.
+- \`npx @hoanghainh/aspec-kit update [--dry-run]\` — pull template fixes (agents, commands, hooks, CI) via 3-way merge.
+- \`npx @hoanghainh/aspec-kit convert <file.xlsx|pdf>\` — convert 詳細設計 Excel/PDF to Markdown next to the original.
 
 ## Project conventions
 

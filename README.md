@@ -68,7 +68,7 @@ bash bootstrap.sh
 ```
 
 Later, pull template fixes (agents, runbooks, hooks, CI) into the project without touching your
-design docs, glossary, decisions, specs or `src/`:
+design docs, glossary, decisions, intake, change reports, Q&A sheets, specs, `src/` or `tests/`:
 ```bash
 npx @hoanghainh/aspec-kit update --dry-run   # preview; drop --dry-run to apply
 ```
@@ -105,7 +105,7 @@ The npm CLI has no dependencies and covers the whole lifecycle of a project. Ful
 | Command | What it does |
 |---|---|
 | `npx @hoanghainh/aspec-kit init <dir>` | Scaffold a new project. Existing files are never overwritten without `--force`. |
-| `npx @hoanghainh/aspec-kit update [--dry-run] [--to <ref>]` | Pull template fixes into an existing project with a 3-way merge. Client docs, glossary, decisions, specs and `src/` are never touched. |
+| `npx @hoanghainh/aspec-kit update [--dry-run] [--to <ref>]` | Pull template fixes into an existing project with a 3-way merge. Client docs, glossary, decisions, intake, changes, Q&A sheets, specs, `src/` and `tests/` are never touched. |
 | `npx @hoanghainh/aspec-kit doctor [--json]` | Check tools, Spec Kit skills, CODEOWNERS, formatter and branch protection. Prints a fix hint for each problem. |
 | `npx @hoanghainh/aspec-kit convert <file.xlsx\|pdf>` | Convert a 詳細設計 workbook or PDF into Markdown next to the original. Requires [uv](https://docs.astral.sh/uv/). |
 
@@ -193,15 +193,16 @@ rm -rf specs/000-example-reservation \
        docs/changes/2026-10-31-example-reservation.md \
        docs/qa/000-example-reservation.md \
        docs/qa/000-example-reservation.csv
-# Remove the sample entry from INDEX.md:
+# Remove the sample entry from INDEX.md and 05-lessons.md:
 python3 -c "
 from pathlib import Path
-p = Path('docs/04-decisions/INDEX.md')
-lines = [l for l in p.read_text().splitlines() if '000-example-reservation' not in l]
-p.write_text('\n'.join(lines) + '\n')
+for rel in ('docs/04-decisions/INDEX.md', 'docs/05-lessons.md'):
+    p = Path(rel)
+    lines = [l for l in p.read_text().splitlines() if '000-example-reservation' not in l]
+    p.write_text('\n'.join(lines) + '\n')
 "
 ```
-*(Note: If you use `npx @hoanghainh/aspec-kit --clean`, this clean-up is done automatically).*
+*(Note: If you use `npx @hoanghainh/aspec-kit init <dir> --clean`, this clean-up is done automatically).*
 
 ---
 

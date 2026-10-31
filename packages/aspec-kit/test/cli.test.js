@@ -692,7 +692,8 @@ describe("aspec-kit update", () => {
   test("isProtected covers client docs, memory, specs and src only", () => {
     for (const p of ["docs/01-basic-design/a.md", "docs/02-detail-design/x", "docs/03-ui/y",
       "docs/00-glossary.md", "docs/04-decisions/INDEX.md", "docs/05-lessons.md",
-      "docs/intake/a.md", "specs/x/spec.md", "src/a.ts", ".aspec-kit.json"]) {
+      "docs/intake/a.md", "docs/changes/a.md", "docs/qa/a.md", "specs/x/spec.md",
+      "src/a.ts", "tests/a.test.ts", ".aspec-kit.json"]) {
       assert.equal(isProtected(p), true, p);
     }
     for (const p of ["docs/TEAM-WORKFLOW.md", "CLAUDE.md", ".claude/agents/a.md", "srcx/a", "docs/10-x"]) {
