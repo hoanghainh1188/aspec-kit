@@ -56,9 +56,17 @@ export function readManifest(projectDir) {
 
 /**
  * Build a manifest object. `files` is a map rel → hash; keys are sorted for stable diffs.
- * @param {{ templateRef: string, cliVersion: string, steward?: string|null, stack?: string|null, lang?: string|null, files: Record<string,string> }} input
+ * @param {{ templateRef: string, cliVersion: string, steward?: string|null, stack?: string|null, lang?: string|null, agents?: string[]|null, files: Record<string,string> }} input
  */
-export function buildManifest({ templateRef, cliVersion, steward = null, stack = null, lang = null, files }) {
+export function buildManifest({
+  templateRef,
+  cliVersion,
+  steward = null,
+  stack = null,
+  lang = null,
+  agents = null,
+  files,
+}) {
   const sorted = Object.fromEntries(Object.keys(files).sort().map((k) => [k, files[k]]));
   const out = {
     schema: MANIFEST_SCHEMA,
@@ -68,6 +76,7 @@ export function buildManifest({ templateRef, cliVersion, steward = null, stack =
   };
   if (stack) out.stack = stack;
   if (lang) out.lang = lang;
+  if (Array.isArray(agents) && agents.length > 0) out.agents = agents;
   out.updatedAt = new Date().toISOString();
   out.files = sorted;
   return out;

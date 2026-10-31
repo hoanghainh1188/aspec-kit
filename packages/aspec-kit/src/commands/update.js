@@ -17,6 +17,11 @@ import {
   readIgnoreFile,
 } from "../index.js";
 import { MANIFEST_FILE, buildManifest, hashContent, hashFile, readManifest, writeManifest } from "../manifest.js";
+import {
+  buildAgentInstructionContent,
+  listAgentInstructionFiles,
+  transformBootstrapAgents,
+} from "../agents.js";
 import { DEFAULT_LANG, resolveLangSourcePath } from "../lang.js";
 import { buildFormatHook, transformClaudeMdStack, transformSettingsJson } from "../stack.js";
 
@@ -91,24 +96,55 @@ export function parseUpdateArgs(argv) {
   };
 }
 
-/** Template content as it would be scaffolded (CODEOWNERS gets the recorded steward; localized & stack files resolve via lang/stack). */
-function readTheirs(templateDir, rel, steward, { lang = DEFAULT_LANG, stack = null } = {}) {
+/** Template content as it would be scaffolded (CODEOWNERS gets the recorded steward; localized, stack & agent files resolve via lang/stack/agents). */
+function readTheirs(
+  templateDir,
+  rel,
+  steward,
+  { lang = DEFAULT_LANG, stack = null, agents = null } = {}
+) {
+  const agentFiles = listAgentInstructionFiles(agents);
+  if (agentFiles.includes(rel)) {
+    const claudePath = resolveLangSourcePath(templateDir, "CLAUDE.md", lang);
+    let claudeText = fs.readFileSync(claudePath, "utf-8");
+    if (stack) {
+      claudeText = transformClaudeMdStack(claudeText, stack);
+    }
+    const content = buildAgentInstructionContent(claudeText, rel);
+    return { buf: Buffer.from(content, "utf-8"), mode: 0o644 };
+  }
   const srcPath = resolveLangSourcePath(templateDir, rel, lang);
   const buf = fs.readFileSync(srcPath);
+  const mode = fs.statSync(srcPath).mode;
   if (rel === ".github/CODEOWNERS" && steward) {
-    return Buffer.from(buf.toString("utf-8").split(CODEOWNERS_PLACEHOLDER).join(steward), "utf-8");
+    return {
+      buf: Buffer.from(buf.toString("utf-8").split(CODEOWNERS_PLACEHOLDER).join(steward), "utf-8"),
+      mode,
+    };
   }
   if (stack) {
     if (rel === ".claude/hooks/format.sh") {
       const hook = buildFormatHook(stack);
-      if (hook) return Buffer.from(hook, "utf-8");
+      if (hook) return { buf: Buffer.from(hook, "utf-8"), mode };
     } else if (rel === ".claude/settings.json") {
-      return Buffer.from(transformSettingsJson(buf.toString("utf-8"), stack), "utf-8");
+      return {
+        buf: Buffer.from(transformSettingsJson(buf.toString("utf-8"), stack), "utf-8"),
+        mode,
+      };
     } else if (rel === "CLAUDE.md") {
-      return Buffer.from(transformClaudeMdStack(buf.toString("utf-8"), stack), "utf-8");
+      return {
+        buf: Buffer.from(transformClaudeMdStack(buf.toString("utf-8"), stack), "utf-8"),
+        mode,
+      };
     }
   }
-  return buf;
+  if (rel === "bootstrap.sh" && Array.isArray(agents) && agents.length > 0) {
+    return {
+      buf: Buffer.from(transformBootstrapAgents(buf.toString("utf-8"), agents), "utf-8"),
+      mode,
+    };
+  }
+  return { buf, mode };
 }
 
 /**
@@ -119,9 +155,11 @@ function readTheirs(templateDir, rel, steward, { lang = DEFAULT_LANG, stack = nu
  */
 export function planUpdate({ projectDir, templateDir, manifest }) {
   const excludes = [...new Set([...DEFAULT_EXCLUDES, ...readIgnoreFile(templateDir)])];
-  const templateFiles = new Set(
-    listTemplateFiles(templateDir, excludes).filter((rel) => !rel.endsWith(CONFLICT_SUFFIX))
-  );
+  const agents = manifest?.agents ?? null;
+  const templateFiles = new Set([
+    ...listTemplateFiles(templateDir, excludes).filter((rel) => !rel.endsWith(CONFLICT_SUFFIX)),
+    ...listAgentInstructionFiles(agents),
+  ]);
   const baseFiles = manifest?.files ?? {};
   const steward = manifest?.steward ?? null;
   const lang = manifest?.lang ?? DEFAULT_LANG;
@@ -146,9 +184,8 @@ export function planUpdate({ projectDir, templateDir, manifest }) {
       continue;
     }
 
-    const theirsBuf = readTheirs(templateDir, rel, steward, { lang, stack });
+    const { buf: theirsBuf, mode } = readTheirs(templateDir, rel, steward, { lang, stack, agents });
     const theirs = hashContent(theirsBuf);
-    const mode = fs.statSync(path.join(templateDir, rel)).mode;
     files[rel] = theirs;
 
     let action;
@@ -248,6 +285,7 @@ export async function runUpdate(argv, { cliVersion }) {
         steward: manifest?.steward ?? null,
         stack: manifest?.stack ?? null,
         lang: manifest?.lang ?? null,
+        agents: manifest?.agents ?? null,
         files: plan.files,
       })
     );

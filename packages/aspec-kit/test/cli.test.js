@@ -9,18 +9,23 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import {
+  AGENT_METADATA,
   CliError,
+  DEFAULT_AGENTS,
   DEFAULT_EXCLUDES,
   DEFAULT_LANG,
   STACK_CONFIGS,
+  SUPPORTED_AGENTS,
   SUPPORTED_LANGS,
   SUPPORTED_STACKS,
+  applyAgents,
   applyLang,
   applyStack,
   applySteward,
   copyTemplate,
   isExcluded,
   listTemplateFiles,
+  normalizeAgents,
   normalizeLang,
   normalizeStack,
   normalizeSteward,
@@ -126,6 +131,18 @@ describe("parseCliArgs", () => {
     assert.equal(parseCliArgs(["--template-ref", "v1.2.3"]).templateRef, "v1.2.3");
     assert.equal(parseCliArgs(["--template-ref", "feat/x"]).templateRef, "feat/x");
     assert.throws(() => parseCliArgs(["--template-ref", "main; rm -rf /"]), CliError);
+  });
+
+  test("--agent parses single, comma-separated, and repeated flags (defaults to ['claude'])", () => {
+    assert.deepEqual(parseCliArgs([]).agents, ["claude"]);
+    assert.deepEqual(parseCliArgs(["--agent", "gemini"]).agents, ["gemini"]);
+    assert.deepEqual(parseCliArgs(["--agent", "gemini,copilot"]).agents, ["gemini", "copilot"]);
+    assert.deepEqual(
+      parseCliArgs(["--agent", "cursor", "--agent", "claude,gemini"]).agents,
+      ["claude", "gemini", "cursor"]
+    );
+    assert.throws(() => parseCliArgs(["--agent", "unknown"]), CliError);
+    assert.throws(() => parseCliArgs(["--agent", ""]), CliError);
   });
 
   test("--lang is parsed and validated (defaults to vi)", () => {
@@ -371,6 +388,39 @@ describe("CLI end-to-end (local template)", () => {
     assert.equal(fs.readFileSync(path.join(tmp, "CLAUDE.md"), "utf-8"), "MY OWN RULES");
   });
 
+  test("init --agent claude,gemini,copilot,cursor generates synchronized rules, updates bootstrap.sh and passes check-template.py", () => {
+    run(
+      ["init", "multi", "-y", "--clean", "--steward", "@lead", "--agent", "claude,gemini,copilot,cursor"],
+      tmp
+    );
+    const proj = path.join(tmp, "multi");
+
+    for (const f of ["CLAUDE.md", "GEMINI.md", ".github/copilot-instructions.md", "AGENTS.md", ".cursorrules"]) {
+      assert.ok(fs.existsSync(path.join(proj, f)), `${f} should exist`);
+      const text = fs.readFileSync(path.join(proj, f), "utf-8");
+      if (f !== "CLAUDE.md") {
+        assert.match(text, /Multi-Agent Compatibility & Graceful Degradation/);
+      }
+    }
+
+    // .github/copilot-instructions.md lives one directory deep -> relative link to docs/TEAM-WORKFLOW.md is rewritten to ../docs/TEAM-WORKFLOW.md
+    const copilotText = fs.readFileSync(path.join(proj, ".github/copilot-instructions.md"), "utf-8");
+    assert.match(copilotText, /\(\.\.\/docs\/TEAM-WORKFLOW\.md\)/);
+
+    const bootstrapText = fs.readFileSync(path.join(proj, "bootstrap.sh"), "utf-8");
+    assert.match(bootstrapText, /SPEC_KIT_INTEGRATION="\$\{SPEC_KIT_INTEGRATION:-claude,gemini,copilot,cursor\}"/);
+
+    const manifest = JSON.parse(fs.readFileSync(path.join(proj, ".aspec-kit.json"), "utf-8"));
+    assert.deepEqual(manifest.agents, ["claude", "gemini", "copilot", "cursor"]);
+    assert.ok(manifest.files["GEMINI.md"]);
+    assert.ok(manifest.files[".github/copilot-instructions.md"]);
+    assert.ok(manifest.files["AGENTS.md"]);
+
+    execFileSync("python3", [path.join(proj, ".github/scripts/check-template.py")], {
+      stdio: "pipe",
+    });
+  });
+
   test("init --lang en and --lang ja overlay localized docs/agents and pass check-template.py", () => {
     for (const [lang, expectedHeading] of [
       ["en", "# Project Conventions for AI Agents"],
@@ -495,6 +545,27 @@ describe("aspec-kit update", () => {
     // Second run is a no-op
     const out = runWith(v2, ["update"], proj);
     assert.doesNotMatch(out, /^(Updated|Added|Conflicts) /m);
+  });
+
+  test("update refreshes generated multi-agent instruction files when CLAUDE.md changes upstream", () => {
+    const v1 = path.join(tmp, "agent-v1");
+    makeTemplate(v1);
+    writeFile(v1, "bootstrap.sh", '#!/usr/bin/env bash\nSPEC_KIT_INTEGRATION="${SPEC_KIT_INTEGRATION:-claude}"\n');
+    runWith(v1, ["init", "agent-proj", "-y", "--clean", "--agent", "gemini,copilot"], tmp);
+    const proj = path.join(tmp, "agent-proj");
+    assert.match(read(proj, "GEMINI.md"), /# rules/);
+
+    const v2 = path.join(tmp, "agent-v2");
+    makeTemplate(v2);
+    writeFile(v2, "CLAUDE.md", "# rules v2 updated");
+    writeFile(v2, "bootstrap.sh", '#!/usr/bin/env bash\nSPEC_KIT_INTEGRATION="${SPEC_KIT_INTEGRATION:-claude}"\n# v2\n');
+
+    const out = runWith(v2, ["update"], proj);
+    assert.doesNotMatch(out, /Conflicts/);
+    assert.match(read(proj, "GEMINI.md"), /# rules v2 updated/);
+    assert.match(read(proj, ".github/copilot-instructions.md"), /# rules v2 updated/);
+    assert.match(read(proj, "bootstrap.sh"), /SPEC_KIT_INTEGRATION="\$\{SPEC_KIT_INTEGRATION:-gemini,copilot\}"/);
+    assert.deepEqual(manifestOf(proj).agents, ["gemini", "copilot"]);
   });
 
   test("update uses recorded lang pack from manifest", () => {

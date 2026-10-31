@@ -9,16 +9,28 @@ import { parseArgs } from "node:util";
 import { MANIFEST_FILE, buildManifest, hashProjectFiles, readManifest, writeManifest } from "./manifest.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { runConvert } from "./commands/convert.js";
+import {
+  AGENT_METADATA,
+  DEFAULT_AGENTS,
+  SUPPORTED_AGENTS,
+  applyAgents,
+  normalizeAgents,
+} from "./agents.js";
 import { DEFAULT_LANG, SUPPORTED_LANGS, applyLang, normalizeLang } from "./lang.js";
 import { STACK_CONFIGS, SUPPORTED_STACKS, applyStack, normalizeStack } from "./stack.js";
 
 export {
+  AGENT_METADATA,
+  DEFAULT_AGENTS,
   DEFAULT_LANG,
   STACK_CONFIGS,
+  SUPPORTED_AGENTS,
   SUPPORTED_LANGS,
   SUPPORTED_STACKS,
+  applyAgents,
   applyLang,
   applyStack,
+  normalizeAgents,
   normalizeLang,
   normalizeStack,
 };
@@ -113,6 +125,8 @@ Options:
                          ts | python | go | java
   --lang <lang>          Language of scaffolded template conventions & agents:
                          vi (default) | en | ja
+  --agent <agents>       Target AI agent(s): claude (default) | gemini | copilot | cursor
+                         (comma-separated or repeatable; CLAUDE.md is always kept as SSoT)
   --keep-example         Keep sample feature (000-example-reservation)
   --clean                Clean up sample feature
   --force                Overwrite files that already exist in the target directory
@@ -189,6 +203,7 @@ export function parseCliArgs(argv) {
         steward: { type: "string" },
         stack: { type: "string" },
         lang: { type: "string" },
+        agent: { type: "string", multiple: true },
         "keep-example": { type: "boolean" },
         clean: { type: "boolean" },
         force: { type: "boolean" },
@@ -226,6 +241,10 @@ export function parseCliArgs(argv) {
     steward: values.steward !== undefined ? normalizeSteward(values.steward) : null,
     stack: values.stack !== undefined ? normalizeStack(values.stack, CliError) : null,
     lang: values.lang !== undefined ? normalizeLang(values.lang, CliError) : DEFAULT_LANG,
+    agents:
+      values.agent !== undefined && values.agent.length > 0
+        ? normalizeAgents(values.agent, CliError)
+        : [...DEFAULT_AGENTS],
     // null = ask the user; true/false = decided by flag
     keepExample: values["keep-example"] ? true : values.clean ? false : null,
     force: Boolean(values.force),
@@ -617,6 +636,13 @@ export async function main(argv = process.argv.slice(2)) {
       }
     }
 
+    const isDefaultClaudeOnly =
+      opts.agents.length === 1 && opts.agents[0] === "claude";
+    if (!isDefaultClaudeOnly) {
+      const agentFiles = applyAgents(targetDir, opts.agents, ownedFiles, { force: opts.force });
+      console.log(`✓ Configured agent integration (${opts.agents.join(", ")}): ${agentFiles.join(", ")}`);
+    }
+
     if (!keepExample) {
       console.log("==> Removing sample feature...");
       removeSampleFeature(targetDir, ownedFiles);
@@ -642,6 +668,7 @@ export async function main(argv = process.argv.slice(2)) {
         steward: stewardApplied ? steward : previous?.steward ?? null,
         stack: stackModified.length > 0 ? opts.stack : previous?.stack ?? null,
         lang: opts.lang !== DEFAULT_LANG ? opts.lang : previous?.lang ?? null,
+        agents: !isDefaultClaudeOnly ? opts.agents : previous?.agents ?? null,
         files: { ...previous?.files, ...hashProjectFiles(targetDir, ownedFiles) },
       })
     );

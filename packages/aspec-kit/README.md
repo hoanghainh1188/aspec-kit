@@ -67,6 +67,7 @@ npx @hoanghainh/aspec-kit convert <file.xlsx|file.xlsm|file.pdf> [--out <dir>] [
 | `--steward <handle>` | Specify GitHub handle of project Steward for `.github/CODEOWNERS` | `@your-handle` |
 | `--stack <stack>` | Auto-configure `.claude/hooks/format.sh`, `.claude/settings.json` permissions & `CLAUDE.md` tech stack (`ts`, `python`, `go`, `java`) | — |
 | `--lang <lang>` | Language of scaffolded conventions (`CLAUDE.md`, `TEAM-WORKFLOW.md`, subagents, commands): `vi`, `en`, `ja` | `vi` |
+| `--agent <agents>` | Target AI agent(s): `claude`, `gemini`, `copilot`, `cursor` (comma-separated or repeatable). Keeps `CLAUDE.md` as Single Source of Truth, generates `GEMINI.md` / `.github/copilot-instructions.md` / `AGENTS.md` + `.cursorrules`, and configures `SPEC_KIT_INTEGRATION` in `bootstrap.sh` | `claude` |
 | `--clean` | Automatically clean up reference sample feature (`000-example-reservation`) | `true` with `-y` |
 | `--keep-example` | Keep the sample feature to inspect code & spec structure | `false` |
 | `--force` | Overwrite files that already exist in the target directory | `false` (existing files are kept & reported) |
