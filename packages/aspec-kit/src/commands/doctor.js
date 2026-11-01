@@ -151,8 +151,8 @@ export function checkFigmaMcp({ cwd, homeDir }) {
         "tool.figma-mcp",
         "Figma MCP (optional)",
         STATUS.WARN,
-        "not detected in .mcp.json or ~/.claude.json (a claude.ai Figma connector cannot be detected locally)",
-        "Optional: claude mcp add figma … — without it design-intake falls back to docs/03-ui/ snapshots"
+        "not detected in .mcp.json or ~/.claude.json",
+        "Optional: configure Figma MCP or use `aspec-kit figma sync <url>` to export snapshots to docs/03-ui/"
       );
 }
 
