@@ -65,7 +65,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release of `aspec-kit` template, Claude Code plugin (`.claude-plugin/`), and zero-dependency `@hoanghainh/aspec-kit` npm CLI scaffolder ([#2](https://github.com/hoanghainh1188/aspec-kit/pull/2), [#3](https://github.com/hoanghainh1188/aspec-kit/pull/3), [#4](https://github.com/hoanghainh1188/aspec-kit/pull/4)).
 - 4 core subagents (`design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`), `/design-to-code` runbook, 5-tier Git-backed project memory (`docs/00-glossary.md`, `docs/04-decisions/`, `docs/05-lessons.md`), and worked reference feature `000-example-reservation`.
 
-[Unreleased]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.1.0...v0.1.1
