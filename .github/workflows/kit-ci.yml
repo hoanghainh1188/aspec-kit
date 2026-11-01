@@ -36,6 +36,7 @@ jobs:
           test ! -e examples
           test ! -e CHANGELOG.md
           test -f .claude/scripts/convert-design.py
+          test -f .github/workflows/ci.yml
           python3 .github/scripts/check-template.py
           bash -n bootstrap.sh
           echo "✓ Scaffolded project is valid"

@@ -33,6 +33,37 @@ export const STACK_CONFIGS = Object.freeze({
       "- **Formatter (PostToolUse hook)**: `npx --no-install prettier --write \"$FILE\"`",
       "- **Quality gates**: `npm run lint` → `npm run test` → `npm run build`",
     ].join("\n"),
+    ciTestSteps: [
+      "      - uses: actions/setup-node@v4",
+      "        with:",
+      "          node-version: '20'",
+      "",
+      "      - name: Install dependencies",
+      "        run: |",
+      "          if [ -f package-lock.json ]; then",
+      "            npm ci",
+      "          elif [ -f package.json ]; then",
+      "            npm install",
+      "          fi",
+      "",
+      "      - name: Run lint",
+      "        run: |",
+      '          if [ -f package.json ] && npm run | grep -q " lint$"; then',
+      "            npm run lint",
+      "          fi",
+      "",
+      "      - name: Run tests",
+      "        run: |",
+      "          if [ -f package.json ]; then",
+      "            npm test --if-present",
+      "          fi",
+      "",
+      "      - name: Run build",
+      "        run: |",
+      '          if [ -f package.json ] && npm run | grep -q " build$"; then',
+      "            npm run build",
+      "          fi",
+    ].join("\n"),
   }),
   python: Object.freeze({
     id: "python",
@@ -53,6 +84,25 @@ export const STACK_CONFIGS = Object.freeze({
       "- **Formatter (PostToolUse hook)**: `python3 -m black \"$FILE\"`",
       "- **Quality gates**: `ruff` / `flake8` → `mypy` → `pytest`",
     ].join("\n"),
+    ciTestSteps: [
+      "      - uses: actions/setup-python@v5",
+      "        with:",
+      "          python-version: '3.11'",
+      "",
+      "      - name: Install dependencies & testing tools",
+      "        run: |",
+      "          python -m pip install --upgrade pip",
+      "          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi",
+      "          pip install pytest ruff",
+      "",
+      "      - name: Lint with ruff",
+      "        run: |",
+      "          if command -v ruff >/dev/null 2>&1; then ruff check .; fi",
+      "",
+      "      - name: Run tests with pytest",
+      "        run: |",
+      "          if [ -d tests ] || [ -d src ]; then pytest; fi",
+    ].join("\n"),
   }),
   go: Object.freeze({
     id: "go",
@@ -72,6 +122,17 @@ export const STACK_CONFIGS = Object.freeze({
       "- **Formatter (PostToolUse hook)**: `gofmt -w \"$FILE\"`",
       "- **Quality gates**: `golangci-lint run` → `go test ./...` → `go build ./...`",
     ].join("\n"),
+    ciTestSteps: [
+      "      - uses: actions/setup-go@v5",
+      "        with:",
+      "          go-version: 'stable'",
+      "",
+      "      - name: Run tests",
+      "        run: |",
+      "          if [ -f go.mod ]; then",
+      "            go test -v ./...",
+      "          fi",
+    ].join("\n"),
   }),
   java: Object.freeze({
     id: "java",
@@ -89,6 +150,21 @@ export const STACK_CONFIGS = Object.freeze({
       "- **Language / Runtime**: Java / Kotlin (Gradle)",
       "- **Formatter (PostToolUse hook)**: `./gradlew spotlessApply`",
       "- **Quality gates**: `./gradlew check` → `./gradlew test` → `./gradlew build`",
+    ].join("\n"),
+    ciTestSteps: [
+      "      - uses: actions/setup-java@v4",
+      "        with:",
+      "          distribution: 'temurin'",
+      "          java-version: '21'",
+      "",
+      "      - name: Setup Gradle",
+      "        uses: gradle/actions/setup-gradle@v3",
+      "",
+      "      - name: Build & Test",
+      "        run: |",
+      "          if [ -f gradlew ]; then",
+      "            ./gradlew check test",
+      "          fi",
     ].join("\n"),
   }),
 });
@@ -166,6 +242,16 @@ export function transformClaudeMdStack(rawText, stack) {
   return rawText.replace(TECH_STACK_PLACEHOLDER_RE, `$1${cfg.techStackSection}`);
 }
 
+const STACK_TEST_STEPS_RE =
+  /([ \t]*# BEGIN STACK_TEST_STEPS\r?\n)[\s\S]*?(\r?\n[ \t]*# END STACK_TEST_STEPS)/;
+
+/** Transform `.github/workflows/ci.yml` text by replacing the test job steps for the stack. */
+export function transformCiWorkflow(rawYaml, stack) {
+  const cfg = STACK_CONFIGS[stack];
+  if (!cfg || !cfg.ciTestSteps) return rawYaml;
+  return rawYaml.replace(STACK_TEST_STEPS_RE, `$1${cfg.ciTestSteps}$2`);
+}
+
 /**
  * Apply the stack configuration to a scaffolded project directory.
  * Only modifies files that are in `ownedFiles` (written by this CLI run).
@@ -200,6 +286,19 @@ export function applyStack(targetDir, stack, ownedFiles) {
     if (updated !== current) {
       fs.writeFileSync(claudePath, updated, "utf-8");
       modified.push(claudeRel);
+    }
+  }
+
+  const ciRel = ".github/workflows/ci.yml";
+  if (ownedFiles.has(ciRel)) {
+    const ciPath = path.join(targetDir, ciRel);
+    if (fs.existsSync(ciPath)) {
+      const current = fs.readFileSync(ciPath, "utf-8");
+      const updated = transformCiWorkflow(current, stack);
+      if (updated !== current) {
+        fs.writeFileSync(ciPath, updated, "utf-8");
+        modified.push(ciRel);
+      }
     }
   }
 

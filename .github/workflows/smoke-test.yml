@@ -37,6 +37,7 @@ jobs:
           test -f docs/05-lessons.md
           test -f docs/CONSTITUTION_APPEND.md
           test -f .github/scripts/check-template.py
+          test -f .github/workflows/ci.yml
           # Plugin metadata only exists in the kit repo (the CLI does not scaffold it)
           if [ -d .claude-plugin ]; then
             test -f .claude-plugin/plugin.json

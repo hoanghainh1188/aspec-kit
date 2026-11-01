@@ -1,0 +1,94 @@
+# Automated CI Quality Gates for aspec-kit projects
+# Verifies Spec Kit traceability, Japanese deliverables (Q&A sheet, test specs, progress reports),
+# and executes stack-specific automated test suites on every Push and Pull Request.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  spec-gates:
+    name: Spec Kit Quality Gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate template conventions & internal links
+        run: python3 .github/scripts/check-template.py
+
+      - name: Traceability Matrix & AC coverage gate
+        run: |
+          if [ -f .aspecignore ]; then
+            # In kit repository, verify sample app with full test coverage
+            python3 .claude/scripts/traceability.py check --root examples/01-reservation-app --strict
+          elif [ -d specs ] && [ "$(ls -A specs 2>/dev/null)" ]; then
+            echo "==> Checking requirement traceability matrix (--strict)..."
+            python3 .claude/scripts/traceability.py check --strict
+          else
+            echo "ℹ No feature specifications found in specs/ yet — skipping strict check"
+          fi
+
+      - name: Validate test specifications (テスト仕様書)
+        run: |
+          shopt -s nullglob
+          test_sheets=(docs/test-specs/*.md)
+          if [ ${#test_sheets[@]} -gt 0 ]; then
+            echo "==> Validating test specifications and exporting CSVs..."
+            for sheet in "${test_sheets[@]}"; do
+              [ "$(basename "$sheet")" = "README.md" ] && continue
+              echo "Verifying $sheet..."
+              python3 .claude/scripts/test_spec.py export "$sheet"
+              python3 .claude/scripts/test_spec.py summary "$sheet" > /dev/null
+            done
+            echo "✓ All test specifications are valid and match Acceptance Criteria"
+          else
+            echo "ℹ No test specifications found in docs/test-specs/ yet"
+          fi
+
+      - name: Validate weekly progress reports (進捗報告)
+        run: |
+          shopt -s nullglob
+          reports=(docs/reports/*.md)
+          if [ ${#reports[@]} -gt 0 ]; then
+            echo "==> Validating weekly progress reports..."
+            for report in "${reports[@]}"; do
+              [ "$(basename "$report")" = "README.md" ] && continue
+              echo "Verifying $report..."
+              python3 .claude/scripts/progress_report.py validate "$report"
+            done
+            echo "✓ Progress report format valid"
+          fi
+
+      - name: Verify shell hooks & permissions
+        run: |
+          bash -n bootstrap.sh
+          bash -n .claude/hooks/format.sh
+
+  test:
+    name: Project Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # BEGIN STACK_TEST_STEPS
+      - name: Run project tests (auto-detected)
+        run: |
+          if [ -f .aspecignore ]; then
+            echo "Kit repository: project tests verified by kit-ci"
+          elif [ -f package.json ]; then
+            npm test --if-present
+          elif [ -f go.mod ]; then
+            go test -v ./...
+          elif [ -f requirements.txt ] || [ -f pyproject.toml ]; then
+            pytest
+          elif [ -f gradlew ]; then
+            ./gradlew test
+          else
+            echo "ℹ No test runner detected yet — configure test step when tech stack is chosen."
+          fi
+      # END STACK_TEST_STEPS
