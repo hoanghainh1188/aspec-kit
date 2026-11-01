@@ -131,6 +131,8 @@ Commands:
   convert <file>         Convert a 詳細設計 .xlsx/.pdf to Markdown (needs uv; see 'convert --help')
   hook [subcommand]      Install or manage Git pre-commit quality guardrail hook
                          (install | uninstall | status; see 'hook --help')
+  figma sync <file|url>  Fetch and sync Figma screen wireframes and vector assets
+                         (options: --slug, --format svg|png; see 'figma --help')
 
 Options:
   -v, --version          Display CLI version
@@ -672,6 +674,11 @@ export async function main(argv = process.argv.slice(2)) {
   if (argv[0] === "hook") {
     const { runHook } = await import("./commands/hook.js");
     process.exitCode = runHook(argv.slice(1));
+    return;
+  }
+  if (argv[0] === "figma") {
+    const { runFigma } = await import("./commands/figma.js");
+    await runFigma(argv.slice(1));
     return;
   }
   const opts = parseCliArgs(argv);

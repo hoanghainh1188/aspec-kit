@@ -47,6 +47,14 @@ import {
   uninstallHook,
 } from "../src/commands/hook.js";
 import {
+  FigmaError,
+  extractFrames,
+  parseFigmaInput,
+  recordFigmaLinks,
+  sanitizeNodeName,
+  syncFigma,
+} from "../src/commands/figma.js";
+import {
   BOOTSTRAP_SKILLS,
   checkBranchProtection,
   doctorCommand,
@@ -1156,5 +1164,171 @@ describe("aspec-kit hook", () => {
     assert.equal(runHook(["status", tmp]), 0);
     assert.equal(runHook(["uninstall", tmp]), 0);
     assert.equal(runHook(["status", tmp]), 1); // Not installed -> exit 1
+  });
+});
+
+describe("aspec-kit figma sync", () => {
+  test("parseFigmaInput handles URLs, file keys, and node-id", () => {
+    assert.deepEqual(
+      parseFigmaInput("https://www.figma.com/design/AbCdEf12345/App-Design?node-id=1-23"),
+      { fileKey: "AbCdEf12345", nodeId: "1:23" }
+    );
+    assert.deepEqual(
+      parseFigmaInput("https://www.figma.com/file/xyz890/Legacy-Link?node-id=4:56"),
+      { fileKey: "xyz890", nodeId: "4:56" }
+    );
+    assert.deepEqual(
+      parseFigmaInput("AbCdEf12345"),
+      { fileKey: "AbCdEf12345", nodeId: null }
+    );
+    assert.deepEqual(parseFigmaInput(""), { fileKey: "", nodeId: null });
+  });
+
+  test("sanitizeNodeName formats valid file names", () => {
+    assert.equal(sanitizeNodeName("Screen / Login & Sign Up"), "screen-login-&-sign-up");
+    assert.equal(sanitizeNodeName("Header? *Component* <v1>"), "header-component-v1");
+    assert.equal(sanitizeNodeName(""), "unnamed-frame");
+  });
+
+  test("extractFrames extracts top-level frames and components", () => {
+    const doc = {
+      id: "0:0",
+      type: "DOCUMENT",
+      children: [
+        {
+          id: "0:1",
+          type: "CANVAS",
+          name: "Page 1",
+          children: [
+            {
+              id: "1:2",
+              type: "FRAME",
+              name: "Home Screen",
+              absoluteBoundingBox: { width: 375, height: 812 },
+              children: [
+                { id: "1:3", type: "RECTANGLE", name: "Bg" },
+              ],
+            },
+            {
+              id: "1:4",
+              type: "COMPONENT",
+              name: "Navbar",
+              absoluteBoundingBox: { width: 375, height: 60 },
+            },
+          ],
+        },
+      ],
+    };
+
+    const frames = extractFrames(doc);
+    assert.equal(frames.length, 2);
+    assert.equal(frames[0].id, "1:2");
+    assert.equal(frames[0].name, "Home Screen");
+    assert.equal(frames[1].id, "1:4");
+  });
+
+  test("recordFigmaLinks creates structured markdown with changelog", () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "aspec-figma-"));
+    const uiDir = path.join(tmp, "docs/03-ui/reservation");
+    fs.mkdirSync(uiDir, { recursive: true });
+
+    const linksPath = recordFigmaLinks(uiDir, {
+      fileKey: "AbCd123",
+      fileName: "Reservation App",
+      frames: [{ id: "1:2", name: "List View", width: 400, height: 800 }],
+      format: "svg",
+      dateStr: "2026-11-01",
+    });
+
+    assert.equal(fs.existsSync(linksPath), true);
+    const content = fs.readFileSync(linksPath, "utf-8");
+    assert.match(content, /# UI Reference — Figma Live Assets/);
+    assert.match(content, /List View/);
+    assert.match(content, /\*\*Node ID:\*\* `1:2`/);
+    assert.match(content, /screens\/list-view\.svg/);
+    assert.match(content, /## CHANGELOG UI/);
+
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  test("syncFigma downloads SVG wireframes and updates figma-links.md via mock fetch", async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "aspec-figma-"));
+
+    const mockFetch = async (url, options = {}) => {
+      const urlStr = String(url);
+      if (urlStr.includes("/files/test-file-key")) {
+        return {
+          ok: true,
+          json: async () => ({
+            name: "Mock Wireframes",
+            document: {
+              type: "DOCUMENT",
+              children: [
+                {
+                  type: "CANVAS",
+                  children: [
+                    { id: "10:1", type: "FRAME", name: "User Profile", absoluteBoundingBox: { width: 375, height: 812 } },
+                  ],
+                },
+              ],
+            },
+          }),
+        };
+      }
+      if (urlStr.includes("/images/test-file-key")) {
+        return {
+          ok: true,
+          json: async () => ({
+            images: {
+              "10:1": "https://figma-export.mock/10-1.svg",
+            },
+          }),
+        };
+      }
+      if (urlStr.includes("figma-export.mock")) {
+        return {
+          ok: true,
+          text: async () => `<svg viewBox="0 0 375 812"><text>Mock Screen</text></svg>`,
+        };
+      }
+      return { ok: false, status: 404 };
+    };
+
+    const res = await syncFigma({
+      input: "test-file-key",
+      slug: "mock-feature",
+      token: "mock-token",
+      dir: tmp,
+      fetchFn: mockFetch,
+      logger: { log: () => {} },
+    });
+
+    assert.equal(res.count, 1);
+    assert.equal(res.slug, "mock-feature");
+
+    const savedSvg = path.join(tmp, "docs/03-ui/mock-feature/screens/user-profile.svg");
+    assert.equal(fs.existsSync(savedSvg), true);
+    assert.match(fs.readFileSync(savedSvg, "utf-8"), /Mock Screen/);
+
+    const linksMd = path.join(tmp, "docs/03-ui/mock-feature/figma-links.md");
+    assert.equal(fs.existsSync(linksMd), true);
+    assert.match(fs.readFileSync(linksMd, "utf-8"), /User Profile/);
+
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  test("syncFigma throws FigmaError when token is missing", async () => {
+    const oldToken = process.env.FIGMA_PERSONAL_TOKEN;
+    delete process.env.FIGMA_PERSONAL_TOKEN;
+    try {
+      await assert.rejects(
+        async () => {
+          await syncFigma({ input: "any-key", token: "" });
+        },
+        FigmaError
+      );
+    } finally {
+      if (oldToken) process.env.FIGMA_PERSONAL_TOKEN = oldToken;
+    }
   });
 });

@@ -45,6 +45,7 @@ npx @hoanghainh/aspec-kit update [project-directory] [--to <ref>] [--dry-run]
 npx @hoanghainh/aspec-kit doctor [project-directory] [--json]
 npx @hoanghainh/aspec-kit convert <file.xlsx|file.xlsm|file.pdf> [--out <dir>] [--force]
 npx @hoanghainh/aspec-kit hook [install|uninstall|status] [project-directory]
+npx @hoanghainh/aspec-kit figma sync <file-key|url> [options]
 ```
 
 ### Commands
@@ -55,6 +56,7 @@ npx @hoanghainh/aspec-kit hook [install|uninstall|status] [project-directory]
 - `convert <file.xlsx|file.xlsm|file.pdf> [--out <dir>] [--force]`: Converts a 詳細設計 workbook or PDF
   to Markdown (see [Convert design documents](#convert-design-documents)).
 - `hook [install|uninstall|status] [dir]`: Manages Git pre-commit quality guardrail hooks (see [Git pre-commit guardrail](#git-pre-commit-guardrail)).
+- `figma sync <file-key|url>`: Syncs Figma wireframe frames and vector assets via Figma REST API (see [Figma Live Assets Sync](#figma-live-assets-sync)).
 
 > `update`, `doctor` and `convert` are command names, so `npx @hoanghainh/aspec-kit update` no longer
 > scaffolds into a directory called `update`. To create a directory with one of these names, use
@@ -213,6 +215,26 @@ npx @hoanghainh/aspec-kit hook uninstall
 2. **Client Design Protection**: Upstream client design documents (`docs/01-basic-design`, `docs/02-detail-design`, `docs/03-ui`) are read-only. Commits attempting to modify them without explicitly bypassing (`ASPEC_ALLOW_UPSTREAM_DOCS_EDIT=1`) are blocked.
 3. **Glossary Validator**: Validates terminology consistency in `docs/00-glossary.md` via `check-template.py` when glossary or specs are modified.
 4. **Format-On-Save Hook**: Executes `.claude/hooks/format.sh` on staged files if a formatter is configured.
+
+---
+
+## Figma Live Assets Sync (`aspec-kit figma sync`)
+
+When Figma MCP is not configured or for offline CI/CD workflows, `aspec-kit` connects directly to the Figma REST API to download wireframes and vector assets:
+
+```bash
+# Sync all wireframe frames from a Figma file or URL (SVG vector output)
+export FIGMA_PERSONAL_TOKEN="figd_..."
+npx @hoanghainh/aspec-kit figma sync https://www.figma.com/design/AbCdEf12345/User-Reservation --slug user-reservation
+
+# Sync specific node ID as PNG @2x
+npx @hoanghainh/aspec-kit figma sync AbCdEf12345 --slug user-reservation --format png --scale 2 --node-id 1:23
+```
+
+- **Output locations**:
+  - Rendered screens: `docs/03-ui/<slug>/screens/<frame-name>.<svg|png>`
+  - UI Metadata & Links: `docs/03-ui/<slug>/figma-links.md` (records node IDs, direct links, sync timestamp, and changelog)
+- **Zero dependencies**: Uses Node.js native `fetch` to interact directly with Figma REST API (`api.figma.com/v1`).
 
 ---
 
