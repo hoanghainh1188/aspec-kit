@@ -23,7 +23,12 @@ import {
   transformBootstrapAgents,
 } from "../agents.js";
 import { DEFAULT_LANG, resolveLangSourcePath } from "../lang.js";
-import { buildFormatHook, transformClaudeMdStack, transformSettingsJson } from "../stack.js";
+import {
+  buildFormatHook,
+  transformCiWorkflow,
+  transformClaudeMdStack,
+  transformSettingsJson,
+} from "../stack.js";
 
 export const CONFLICT_SUFFIX = ".aspec-new";
 
@@ -137,6 +142,11 @@ function readTheirs(
     } else if (rel === "CLAUDE.md") {
       return {
         buf: Buffer.from(transformClaudeMdStack(buf.toString("utf-8"), stack), "utf-8"),
+        mode,
+      };
+    } else if (rel === ".github/workflows/ci.yml") {
+      return {
+        buf: Buffer.from(transformCiWorkflow(buf.toString("utf-8"), stack), "utf-8"),
         mode,
       };
     }

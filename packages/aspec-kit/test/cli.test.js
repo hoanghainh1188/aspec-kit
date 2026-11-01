@@ -36,6 +36,7 @@ import {
   promptUser,
   readIgnoreFile,
   removeSampleFeature,
+  transformCiWorkflow,
   writeProjectReadme,
 } from "../src/index.js";
 import { isProtected, parseUpdateArgs } from "../src/commands/update.js";
@@ -416,17 +417,29 @@ describe("customization", () => {
     assert.equal(fs.readFileSync(path.join(tmp, "README.md"), "utf-8"), "mine");
   });
 
-  test("applyStack configures format.sh, settings.json and CLAUDE.md for each stack", () => {
+  test("applyStack configures format.sh, settings.json, CLAUDE.md and ci.yml for each stack", () => {
     for (const stack of SUPPORTED_STACKS) {
       const dest = path.join(tmp, `stack-${stack}`);
       fs.mkdirSync(path.join(dest, ".claude/hooks"), { recursive: true });
+      fs.mkdirSync(path.join(dest, ".github/workflows"), { recursive: true });
       fs.copyFileSync(path.join(REPO_ROOT, ".claude/hooks/format.sh"), path.join(dest, ".claude/hooks/format.sh"));
       fs.copyFileSync(path.join(REPO_ROOT, ".claude/settings.json"), path.join(dest, ".claude/settings.json"));
       fs.copyFileSync(path.join(REPO_ROOT, "CLAUDE.md"), path.join(dest, "CLAUDE.md"));
+      fs.copyFileSync(path.join(REPO_ROOT, ".github/workflows/ci.yml"), path.join(dest, ".github/workflows/ci.yml"));
 
-      const owned = new Set([".claude/hooks/format.sh", ".claude/settings.json", "CLAUDE.md"]);
+      const owned = new Set([
+        ".claude/hooks/format.sh",
+        ".claude/settings.json",
+        "CLAUDE.md",
+        ".github/workflows/ci.yml",
+      ]);
       const modified = applyStack(dest, stack, owned);
-      assert.deepEqual(modified, [".claude/hooks/format.sh", ".claude/settings.json", "CLAUDE.md"]);
+      assert.deepEqual(modified, [
+        ".claude/hooks/format.sh",
+        ".claude/settings.json",
+        "CLAUDE.md",
+        ".github/workflows/ci.yml",
+      ]);
 
       const hookText = fs.readFileSync(path.join(dest, ".claude/hooks/format.sh"), "utf-8");
       assert.equal(isFormatHookConfigured(hookText), true, `format.sh for ${stack} must be active`);
@@ -444,7 +457,18 @@ describe("customization", () => {
       const claudeMd = fs.readFileSync(path.join(dest, "CLAUDE.md"), "utf-8");
       assert.ok(claudeMd.includes(STACK_CONFIGS[stack].label), `CLAUDE.md for ${stack} should include stack label`);
       assert.ok(!claudeMd.includes("<Điền khi bắt đầu code"), `CLAUDE.md placeholder should be replaced for ${stack}`);
+
+      const ciYaml = fs.readFileSync(path.join(dest, ".github/workflows/ci.yml"), "utf-8");
+      if (stack === "ts") assert.ok(ciYaml.includes("setup-node"));
+      if (stack === "python") assert.ok(ciYaml.includes("setup-python"));
+      if (stack === "go") assert.ok(ciYaml.includes("setup-go"));
+      if (stack === "java") assert.ok(ciYaml.includes("setup-java"));
     }
+  });
+
+  test("transformCiWorkflow preserves content for unknown stack", () => {
+    const raw = "test:\n  steps:\n    # BEGIN STACK_TEST_STEPS\n    - run: echo\n    # END STACK_TEST_STEPS\n";
+    assert.equal(transformCiWorkflow(raw, "unknown"), raw);
   });
 
   test("applyStack skips files not owned by the current run", () => {
@@ -480,7 +504,7 @@ describe("CLI end-to-end (local template)", () => {
     run(["init", "demo", "-y", "--clean", "--steward", "@lead"], tmp);
     const proj = path.join(tmp, "demo");
 
-    for (const must of ["CLAUDE.md", "bootstrap.sh", ".claude/settings.json", "README.md"]) {
+    for (const must of ["CLAUDE.md", "bootstrap.sh", ".claude/settings.json", "README.md", ".github/workflows/ci.yml"]) {
       assert.ok(fs.existsSync(path.join(proj, must)), `${must} should exist`);
     }
     for (const banned of [
@@ -583,6 +607,10 @@ describe("CLI end-to-end (local template)", () => {
 
     const claudeMd = fs.readFileSync(path.join(proj, "CLAUDE.md"), "utf-8");
     assert.match(claudeMd, /golangci-lint run/);
+
+    const ciYaml = fs.readFileSync(path.join(proj, ".github/workflows/ci.yml"), "utf-8");
+    assert.match(ciYaml, /actions\/setup-go/);
+    assert.match(ciYaml, /go test -v \.\/\.\.\./);
 
     execFileSync("python3", [path.join(proj, ".github/scripts/check-template.py")], {
       stdio: "pipe",

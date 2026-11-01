@@ -17,7 +17,13 @@ import {
   normalizeAgents,
 } from "./agents.js";
 import { DEFAULT_LANG, SUPPORTED_LANGS, applyLang, normalizeLang } from "./lang.js";
-import { STACK_CONFIGS, SUPPORTED_STACKS, applyStack, normalizeStack } from "./stack.js";
+import {
+  STACK_CONFIGS,
+  SUPPORTED_STACKS,
+  applyStack,
+  normalizeStack,
+  transformCiWorkflow,
+} from "./stack.js";
 
 export {
   AGENT_METADATA,
@@ -33,6 +39,7 @@ export {
   normalizeAgents,
   normalizeLang,
   normalizeStack,
+  transformCiWorkflow,
 };
 
 const GITHUB_OWNER_REPO = "hoanghainh1188/aspec-kit";
