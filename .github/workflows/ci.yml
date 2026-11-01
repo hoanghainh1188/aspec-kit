@@ -70,6 +70,14 @@ jobs:
           bash -n bootstrap.sh
           bash -n .claude/hooks/format.sh
 
+      - name: Generate CI quality badges
+        run: |
+          if [ -f .aspecignore ]; then
+            python3 .claude/scripts/badges.py --root examples/01-reservation-app/ --out docs/badges
+          else
+            python3 .claude/scripts/badges.py --out docs/badges
+          fi
+
   test:
     name: Project Tests
     runs-on: ubuntu-latest
