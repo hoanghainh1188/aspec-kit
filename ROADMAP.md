@@ -11,20 +11,29 @@ Lộ trình phát triển cho `aspec-kit` sau phiên bản `v0.3.1`.
 
 ---
 
-## Các ý tưởng & định hướng tiếp theo (v0.5.0+)
+## Kế hoạch phát triển phiên bản v0.5.0: Visual Quality & Deliverables Export
 
-### 1. Jira / Confluence Integration (`/jira-sync`)
-- Kết nối hai chiều với Atlassian Jira / Confluence:
-  - Tự động sinh issue hoặc subtask trên Jira từ `specs/<slug>/tasks.md`.
-  - Đồng bộ trạng thái Q&A sheet từ `docs/qa/` lên Jira issue hoặc trang Confluence của khách hàng.
+Phiên bản `v0.5.0` tập trung hoàn toàn vào chất lượng bàn giao kỹ thuật (deliverables) và hỗ trợ BrSE/Dev xác thực trực quan (Visual Verification), giữ vững triết lý gọn nhẹ (zero-dependency, không lấn sân sang các công cụ quản trị dự án ngoài lề):
 
-### 2. Figma Visual Diff & Regression Checker
-- Tự động so sánh ảnh chụp màn hình wireframe giữa 2 phiên bản snapshot trong `docs/03-ui/<slug>/screens/`.
-- Đánh dấu vùng thay đổi (visual diff) để BrSE kiểm tra nhanh khi nhận được thông báo 仕様変更 từ khách hàng.
+```mermaid
+flowchart TD
+    A["Figma Visual Diff Checker<br/><code>aspec-kit figma diff</code>"] --> B["仕様変更 Visual Impact<br/>(Tích hợp vào /design-change)"]
+    B --> C["Static Dashboard Export<br/><code>aspec-kit view --export</code>"]
+    C --> D["CI Quality Badges & Artifacts<br/>(Traceability & Spec status SVG)"]
+```
 
-### 3. CI Quality Badges & Dashboard Export
-- Xuất bản bản ghi tĩnh (Static HTML export / Markdown summary) của `aspec-kit view` để deploy lên GitHub Pages hoặc lưu thành artifact báo cáo sau mỗi build CI.
-- Huy hiệu (badge) độ phủ Traceability & Test Spec gắn trực tiếp vào README của dự án.
+### 1. Figma Visual Diff & Regression Checker (`aspec-kit figma diff`)
+- So sánh sự thay đổi giữa 2 phiên bản wireframe/screen trong `docs/03-ui/<slug>/screens/`.
+- Tự động sinh ảnh hoặc báo cáo visual diff đánh dấu các vị trí thay đổi (added, modified, removed elements).
+- Tích hợp trực tiếp vào lệnh `/design-change` để giúp BrSE và khách hàng nhìn thấy ngay điểm khác biệt trên giao diện khi có yêu cầu 仕様変更.
+
+### 2. Static Deliverables Dashboard Export (`aspec-kit view --export`)
+- Cho phép xuất toàn bộ Deliverables Dashboard (`aspec-kit view`) thành một file HTML độc lập tĩnh (self-contained static HTML) vào thư mục `docs/deliverables.html` hoặc `build/dashboard/`.
+- Phù hợp để đính kèm làm artifact trong GitHub Actions CI hoặc publish trực tiếp lên GitHub Pages / mạng nội bộ cho PM và khách hàng duyệt mà không cần chạy server local.
+
+### 3. CI Quality Badges & Shields Endpoint
+- Sinh file huy hiệu SVG chuẩn (`docs/badges/traceability.svg`, `docs/badges/test-specs.svg`) hiển thị tỷ lệ bao phủ AC và Test Spec (ví dụ: `traceability: 100% covered - passing`, `specs: 6/6 AC verified`).
+- Gắn trực tiếp vào `README.md` của dự án để phản ánh trạng thái chất lượng theo thời gian thực sau mỗi lần chạy CI.
 
 ---
 
