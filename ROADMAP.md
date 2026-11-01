@@ -7,7 +7,24 @@ Lộ trình phát triển cho `aspec-kit` sau phiên bản `v0.3.1`.
 - [x] **v0.1.0** — Initial release: template, plugin, CLI scaffolder, 4 agents, `/design-to-code`, 5-tier memory.
 - [x] **v0.2.0** — CLI hardening, pinned template tags, strict flags, CI test suite.
 - [x] **v0.3.0** & **v0.3.1** — BrSE suite (`/qa-sheet`, `aspec-kit convert`, `/design-change`, `/traceability`, `/test-spec`, `/progress-report`), multi-agent (`--agent`), localization (`--lang`), stack configuration (`--stack`), end-to-end reservation app example.
-- [ ] **v0.4.0** — Developer Experience, Project CI Quality Gates & External Integrations.
+- [x] **v0.4.0** — Developer Experience, Project CI Quality Gates & External Integrations.
+
+---
+
+## Các ý tưởng & định hướng tiếp theo (v0.5.0+)
+
+### 1. Jira / Confluence Integration (`/jira-sync`)
+- Kết nối hai chiều với Atlassian Jira / Confluence:
+  - Tự động sinh issue hoặc subtask trên Jira từ `specs/<slug>/tasks.md`.
+  - Đồng bộ trạng thái Q&A sheet từ `docs/qa/` lên Jira issue hoặc trang Confluence của khách hàng.
+
+### 2. Figma Visual Diff & Regression Checker
+- Tự động so sánh ảnh chụp màn hình wireframe giữa 2 phiên bản snapshot trong `docs/03-ui/<slug>/screens/`.
+- Đánh dấu vùng thay đổi (visual diff) để BrSE kiểm tra nhanh khi nhận được thông báo 仕様変更 từ khách hàng.
+
+### 3. CI Quality Badges & Dashboard Export
+- Xuất bản bản ghi tĩnh (Static HTML export / Markdown summary) của `aspec-kit view` để deploy lên GitHub Pages hoặc lưu thành artifact báo cáo sau mỗi build CI.
+- Huy hiệu (badge) độ phủ Traceability & Test Spec gắn trực tiếp vào README của dự án.
 
 ---
 
