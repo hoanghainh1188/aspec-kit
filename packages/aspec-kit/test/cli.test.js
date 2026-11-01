@@ -41,6 +41,12 @@ import {
 } from "../src/index.js";
 import { isProtected, parseUpdateArgs } from "../src/commands/update.js";
 import {
+  checkHookStatus,
+  installHook,
+  runHook,
+  uninstallHook,
+} from "../src/commands/hook.js";
+import {
   BOOTSTRAP_SKILLS,
   checkBranchProtection,
   doctorCommand,
@@ -861,6 +867,7 @@ function makeHealthyProject(root) {
   for (const s of BOOTSTRAP_SKILLS) writeFile(root, `.claude/skills/speckit-${s}/SKILL.md`, "skill");
   writeFile(root, ".github/CODEOWNERS", "# replace @your-lead-handle\ndocs/00-glossary.md  @lead\n");
   writeFile(root, ".claude/hooks/format.sh", "#!/usr/bin/env bash\n# exit 0\ngofmt -w \"$FILE\"\n");
+  writeFile(root, ".git/hooks/pre-commit", "# aspec-kit pre-commit hook\n");
   writeFile(root, ".mcp.json", JSON.stringify({ mcpServers: { figma: {} } }));
 }
 
@@ -1077,5 +1084,77 @@ describe("doctor", () => {
     const report = JSON.parse(stdout);
     assert.equal(byId(report, "speckit.specify-dir").status, "fail");
     assert.equal(byId(report, "guard.branch-protection").status, "skip");
+  });
+});
+
+describe("aspec-kit hook", () => {
+  test("installHook creates executable pre-commit hook in git repo", () => {
+    const gitDir = path.join(tmp, ".git");
+    fs.mkdirSync(gitDir, { recursive: true });
+
+    const res = installHook(tmp);
+    assert.equal(res.action, "installed");
+    assert.ok(fs.existsSync(res.path));
+
+    const content = fs.readFileSync(res.path, "utf-8");
+    assert.match(content, /# aspec-kit pre-commit hook/);
+    assert.match(content, /Unresolved merge conflict marker/);
+    assert.match(content, /docs\/\(01-basic-design\|02-detail-design\|03-ui\)/);
+    assert.match(content, /docs\/00-glossary\.md/);
+    assert.match(content, /\.claude\/hooks\/format\.sh/);
+
+    const mode = fs.statSync(res.path).mode;
+    assert.equal((mode & 0o111) !== 0, true, "hook must be executable");
+
+    // Re-install updates cleanly
+    assert.equal(installHook(tmp).action, "updated");
+  });
+
+  test("installHook appends block if user has an existing custom pre-commit hook", () => {
+    const hooksDir = path.join(tmp, ".git/hooks");
+    fs.mkdirSync(hooksDir, { recursive: true });
+    writeFile(tmp, ".git/hooks/pre-commit", "#!/bin/sh\necho 'my custom hook'\n");
+
+    const res = installHook(tmp);
+    assert.equal(res.action, "appended");
+
+    const content = fs.readFileSync(res.path, "utf-8");
+    assert.match(content, /my custom hook/);
+    assert.match(content, /# BEGIN ASPEC_KIT_HOOK/);
+    assert.match(content, /# END ASPEC_KIT_HOOK/);
+
+    // Uninstall unlinks block while preserving custom hook
+    const unres = uninstallHook(tmp);
+    assert.equal(unres.action, "unlinked_block");
+    const preserved = fs.readFileSync(res.path, "utf-8");
+    assert.match(preserved, /my custom hook/);
+    assert.doesNotMatch(preserved, /# BEGIN ASPEC_KIT_HOOK/);
+  });
+
+  test("uninstallHook removes standalone hook", () => {
+    const gitDir = path.join(tmp, ".git");
+    fs.mkdirSync(gitDir, { recursive: true });
+    installHook(tmp);
+    assert.equal(checkHookStatus(tmp).installed, true);
+
+    const res = uninstallHook(tmp);
+    assert.equal(res.action, "removed");
+    assert.equal(fs.existsSync(res.path), false);
+    assert.equal(checkHookStatus(tmp).installed, false);
+  });
+
+  test("installHook throws if directory is not a git repo", () => {
+    assert.throws(() => installHook(tmp), /not a git repository/);
+  });
+
+  test("runHook CLI handles subcommands and help", () => {
+    const gitDir = path.join(tmp, ".git");
+    fs.mkdirSync(gitDir, { recursive: true });
+
+    assert.equal(runHook(["--help"]), 0);
+    assert.equal(runHook(["install", tmp]), 0);
+    assert.equal(runHook(["status", tmp]), 0);
+    assert.equal(runHook(["uninstall", tmp]), 0);
+    assert.equal(runHook(["status", tmp]), 1); // Not installed -> exit 1
   });
 });

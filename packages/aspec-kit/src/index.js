@@ -129,6 +129,8 @@ Commands:
                          (run 'aspec-kit update --help' for details)
   doctor [dir] [--json]  Check environment & guardrails of a project (exit 1 on failure)
   convert <file>         Convert a 詳細設計 .xlsx/.pdf to Markdown (needs uv; see 'convert --help')
+  hook [subcommand]      Install or manage Git pre-commit quality guardrail hook
+                         (install | uninstall | status; see 'hook --help')
 
 Options:
   -v, --version          Display CLI version
@@ -667,6 +669,11 @@ export async function main(argv = process.argv.slice(2)) {
     runConvert(argv.slice(1));
     return;
   }
+  if (argv[0] === "hook") {
+    const { runHook } = await import("./commands/hook.js");
+    process.exitCode = runHook(argv.slice(1));
+    return;
+  }
   const opts = parseCliArgs(argv);
 
   if (opts.help) {
@@ -874,14 +881,19 @@ export async function main(argv = process.argv.slice(2)) {
     );
     console.log(`✓ Wrote ${MANIFEST_FILE}`);
 
-    // 6. Initialize git repo if not already a git repository
+    // 6. Initialize git repo if not already a git repository & install pre-commit hook
     try {
       if (!fs.existsSync(path.join(targetDir, ".git"))) {
         execFileSync("git", ["init"], { cwd: targetDir, stdio: "ignore" });
         console.log("✓ Initialized fresh git repository");
       }
+      if (fs.existsSync(path.join(targetDir, ".git"))) {
+        const { installHook } = await import("./commands/hook.js");
+        installHook(targetDir);
+        console.log("✓ Installed Git pre-commit quality hook (.git/hooks/pre-commit)");
+      }
     } catch {
-      // Git not installed, ignore
+      // Git not installed or hook installation error, ignore
     }
 
     // 7. Output completion banner
