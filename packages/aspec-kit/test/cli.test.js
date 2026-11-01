@@ -56,8 +56,10 @@ import {
 } from "../src/commands/figma.js";
 import {
   collectDashboardData,
+  exportDashboardHtml,
   parseCsv,
   renderDashboardHtml,
+  runDashboard,
   startDashboardServer,
 } from "../src/commands/dashboard.js";
 import {
@@ -1438,6 +1440,26 @@ describe("aspec-kit view / dashboard", () => {
     assert.equal(Array.isArray(jsonData.qaSheets), true);
 
     await serverInstance.close();
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  test("exportDashboardHtml writes self-contained static deliverables.html", () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "aspec-export-"));
+    const dest = exportDashboardHtml(tmp, null, { log: () => {} });
+
+    assert.equal(fs.existsSync(dest), true);
+    assert.equal(dest, path.join(tmp, "docs/deliverables.html"));
+
+    const content = fs.readFileSync(dest, "utf8");
+    assert.match(content, /<!DOCTYPE html>/);
+    assert.match(content, /aspec-kit Deliverables Dashboard/);
+    assert.match(content, /DASHBOARD_DATA/);
+
+    // Custom output path
+    const customDest = path.join(tmp, "custom/report.html");
+    exportDashboardHtml(tmp, customDest, { log: () => {} });
+    assert.equal(fs.existsSync(customDest), true);
+
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 });
