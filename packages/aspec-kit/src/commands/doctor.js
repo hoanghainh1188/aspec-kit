@@ -262,6 +262,29 @@ export function checkFormatHook({ cwd }) {
       );
 }
 
+export function checkGitHook({ cwd }) {
+  const file = path.join(cwd, ".git/hooks/pre-commit");
+  if (!fs.existsSync(file)) {
+    return check(
+      "guard.git-hook",
+      ".git/hooks/pre-commit",
+      STATUS.WARN,
+      "not installed — no pre-commit quality checks",
+      "Run: npx @hoanghainh/aspec-kit hook install"
+    );
+  }
+  const content = fs.readFileSync(file, "utf-8");
+  return content.includes("aspec-kit pre-commit hook") || content.includes("# BEGIN ASPEC_KIT_HOOK")
+    ? check("guard.git-hook", ".git/hooks/pre-commit", STATUS.OK, "installed & active")
+    : check(
+        "guard.git-hook",
+        ".git/hooks/pre-commit",
+        STATUS.WARN,
+        "custom hook without aspec-kit guardrails",
+        "Run: npx @hoanghainh/aspec-kit hook install"
+      );
+}
+
 export function checkBranchProtection({ cwd, run, hasCommand }) {
   const id = "guard.branch-protection";
   const title = "branch protection (main)";
@@ -343,6 +366,7 @@ export function runDoctor(deps = {}) {
     ...checkSpecKit(ctx),
     checkCodeowners(ctx),
     checkFormatHook(ctx),
+    checkGitHook(ctx),
     checkBranchProtection(ctx),
   ];
   const summary = Object.fromEntries(

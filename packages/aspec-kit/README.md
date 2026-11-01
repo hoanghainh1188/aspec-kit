@@ -44,6 +44,7 @@ npx @hoanghainh/aspec-kit [project-directory] [options]
 npx @hoanghainh/aspec-kit update [project-directory] [--to <ref>] [--dry-run]
 npx @hoanghainh/aspec-kit doctor [project-directory] [--json]
 npx @hoanghainh/aspec-kit convert <file.xlsx|file.xlsm|file.pdf> [--out <dir>] [--force]
+npx @hoanghainh/aspec-kit hook [install|uninstall|status] [project-directory]
 ```
 
 ### Commands
@@ -53,6 +54,7 @@ npx @hoanghainh/aspec-kit convert <file.xlsx|file.xlsm|file.pdf> [--out <dir>] [
   (see [Health check](#health-check-aspec-kit-doctor)).
 - `convert <file.xlsx|file.xlsm|file.pdf> [--out <dir>] [--force]`: Converts a 詳細設計 workbook or PDF
   to Markdown (see [Convert design documents](#convert-design-documents)).
+- `hook [install|uninstall|status] [dir]`: Manages Git pre-commit quality guardrail hooks (see [Git pre-commit guardrail](#git-pre-commit-guardrail)).
 
 > `update`, `doctor` and `convert` are command names, so `npx @hoanghainh/aspec-kit update` no longer
 > scaffolds into a directory called `update`. To create a directory with one of these names, use
@@ -186,6 +188,31 @@ npx @hoanghainh/aspec-kit convert docs/02-detail-design/user-reservation/field-s
 runs a Python script with inline [PEP 723](https://peps.python.org/pep-0723/) dependencies
 (`openpyxl`, `pdfplumber`) via `uv run --script`, which caches an isolated environment on first use.
 The same script is scaffolded into projects as `.claude/scripts/convert-design.py`.
+
+---
+
+## Git Pre-Commit Guardrail (`aspec-kit hook`)
+
+`aspec-kit` enforces strict quality standards before any code or design change is committed:
+
+```bash
+# Install hook in current repository (default)
+npx @hoanghainh/aspec-kit hook install
+
+# Check hook status
+npx @hoanghainh/aspec-kit hook status
+
+# Uninstall hook
+npx @hoanghainh/aspec-kit hook uninstall
+```
+
+> Pre-commit hooks are automatically installed during `aspec-kit init` if a Git repository is detected.
+
+### Guardrails Enforced:
+1. **Merge Conflict Detector**: Blocks commits containing unresolved conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) in staged files.
+2. **Client Design Protection**: Upstream client design documents (`docs/01-basic-design`, `docs/02-detail-design`, `docs/03-ui`) are read-only. Commits attempting to modify them without explicitly bypassing (`ASPEC_ALLOW_UPSTREAM_DOCS_EDIT=1`) are blocked.
+3. **Glossary Validator**: Validates terminology consistency in `docs/00-glossary.md` via `check-template.py` when glossary or specs are modified.
+4. **Format-On-Save Hook**: Executes `.claude/hooks/format.sh` on staged files if a formatter is configured.
 
 ---
 
