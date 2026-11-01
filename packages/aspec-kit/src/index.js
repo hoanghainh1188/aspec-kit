@@ -62,6 +62,7 @@ export const DEFAULT_EXCLUDES = Object.freeze([
   ".github/workflows/kit-ci.yml",
   ".github/scripts/sync-version.mjs",
   "CHANGELOG.md",
+  "ROADMAP.md",
   "CONTRIBUTING.md",
   "LICENSE",
   // Kit README is replaced by a project README stub (see writeProjectReadme)
