@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-01
+
+### Added
+
+- **Figma Wireframe Visual Diff & Regression Checker**:
+  - CLI command `aspec-kit figma diff <file-key|url> [options]` to compare local design screen frames in `docs/03-ui/<slug>/screens/` with current Figma canvas via Figma REST API (`api.figma.com/v1`) with zero npm dependencies ([#66](https://github.com/hoanghainh1188/aspec-kit/issues/66), [#69](https://github.com/hoanghainh1188/aspec-kit/pull/69)):
+    - Detects `ADDED`, `MODIFIED` (pixel dimension & checksum differences), `UNCHANGED`, and `REMOVED` frames.
+    - Supports SVG and PNG formats, optional automatic update (`--update`), JSON report output (`--json`), and non-zero exit codes on regression (`--fail-on-diff`).
+    - Added comprehensive unit tests and `figma diff` recommendation to `aspec-kit doctor`.
+- **Static Deliverables Dashboard HTML Exporter**:
+  - CLI flag `aspec-kit view --export [out-dir]` (and `aspec-kit dashboard --export`) to compile all project deliverables into a standalone, portable static HTML distribution (`deliverables.html` + `deliverables.json`) with zero external CDN/npm dependencies ([#67](https://github.com/hoanghainh1188/aspec-kit/issues/67), [#70](https://github.com/hoanghainh1188/aspec-kit/pull/70)):
+    - Fully inlines CSS styles and SVG icons with embedded JSON payload for offline viewing.
+    - Enables single-click artifact delivery for Japanese client handoffs, audits, or archiving without hosting an active server.
+- **CI Quality Badges & SVG Status Generator**:
+  - Python utility `.claude/scripts/badges.py [output-dir] [--strict]` with zero external pip dependencies generating clean GitHub-style SVG status badges for repository `README.md` ([#68](https://github.com/hoanghainh1188/aspec-kit/issues/68), [#71](https://github.com/hoanghainh1188/aspec-kit/pull/71)):
+    - Traceability Matrix status badge (`traceability.svg`) based on active AC coverage and test links.
+    - Test Specifications status badge (`test-specs.svg`) reflecting total test cases and completion status.
+    - Q&A Sheets status badge (`qa-status.svg`) indicating unanswered vs answered client inquiries.
+    - Integrated with `--json` output and CLI error reporting.
+
 ## [0.4.0] - 2026-11-01
 
 ### Added
@@ -94,7 +114,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release of `aspec-kit` template, Claude Code plugin (`.claude-plugin/`), and zero-dependency `@hoanghainh/aspec-kit` npm CLI scaffolder ([#2](https://github.com/hoanghainh1188/aspec-kit/pull/2), [#3](https://github.com/hoanghainh1188/aspec-kit/pull/3), [#4](https://github.com/hoanghainh1188/aspec-kit/pull/4)).
 - 4 core subagents (`design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`), `/design-to-code` runbook, 5-tier Git-backed project memory (`docs/00-glossary.md`, `docs/04-decisions/`, `docs/05-lessons.md`), and worked reference feature `000-example-reservation`.
 
-[Unreleased]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.1.1...v0.2.0
