@@ -22,6 +22,8 @@ Options:
   -p, --port <number>   Port to listen on (default: 3000)
   --host <string>       Host interface to bind (default: 127.0.0.1)
   --no-open             Do not attempt to open browser automatically
+  --export [path]       Export standalone static HTML deliverable without starting server
+                        (default: docs/deliverables.html)
   -h, --help            Display this help message
 
 Deliverables available in the dashboard:
@@ -567,6 +569,28 @@ function formatMultiline(str) {
 }
 
 /**
+ * Export standalone static dashboard HTML to file
+ */
+export function exportDashboardHtml(projectDir = ".", outputPath = null, logger = console) {
+  const root = path.resolve(projectDir);
+  const data = collectDashboardData(root);
+  const html = renderDashboardHtml(data);
+
+  const destPath = outputPath
+    ? (path.isAbsolute(outputPath) ? outputPath : path.resolve(root, outputPath))
+    : path.join(root, "docs", "deliverables.html");
+
+  fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  fs.writeFileSync(destPath, html, "utf8");
+
+  logger.log(`${GREEN}✓ Static Deliverables Dashboard exported successfully!${RESET}`);
+  logger.log(`  File: ${CYAN}${BOLD}${destPath}${RESET}`);
+  logger.log(`  Items: ${data.traceability.length} ACs, ${data.qaSheets.length} Q&A sheets, ${data.testSpecs.length} Test specs, ${data.reports.length} reports`);
+
+  return destPath;
+}
+
+/**
  * Start the HTTP dashboard server
  */
 export function startDashboardServer({
@@ -625,6 +649,7 @@ export async function runDashboard(args) {
       port: { type: "string", short: "p", default: "3000" },
       host: { type: "string", default: "127.0.0.1" },
       open: { type: "boolean", default: true },
+      export: { type: "string" },
     },
     allowPositionals: true,
   });
@@ -635,6 +660,18 @@ export async function runDashboard(args) {
   }
 
   const projectDir = positionals[0] || ".";
+
+  // Check if export flag is used (either --export or --export <path>)
+  if (values.export !== undefined || args.includes("--export")) {
+    const rawExportIdx = args.indexOf("--export");
+    let exportTarget = values.export;
+    if (!exportTarget && rawExportIdx !== -1 && args[rawExportIdx + 1] && !args[rawExportIdx + 1].startsWith("-")) {
+      exportTarget = args[rawExportIdx + 1];
+    }
+    exportDashboardHtml(projectDir, exportTarget, console);
+    return;
+  }
+
   const port = parseInt(values.port, 10) || 3000;
 
   try {

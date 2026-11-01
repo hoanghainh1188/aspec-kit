@@ -264,6 +264,9 @@ npx @hoanghainh/aspec-kit view
 
 # Or specify a custom port
 npx @hoanghainh/aspec-kit dashboard --port 8080
+
+# Export standalone self-contained HTML deliverable (without starting server)
+npx @hoanghainh/aspec-kit view --export docs/deliverables.html
 ```
 
 ### Dashboard Views:
