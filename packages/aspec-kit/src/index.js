@@ -133,6 +133,7 @@ Commands:
                          (install | uninstall | status; see 'hook --help')
   figma sync <file|url>  Fetch and sync Figma screen wireframes and vector assets
                          (options: --slug, --format svg|png; see 'figma --help')
+  view [dir] [--port P]  Launch local HTML deliverables dashboard (traceability, QA, reports)
 
 Options:
   -v, --version          Display CLI version
@@ -679,6 +680,11 @@ export async function main(argv = process.argv.slice(2)) {
   if (argv[0] === "figma") {
     const { runFigma } = await import("./commands/figma.js");
     await runFigma(argv.slice(1));
+    return;
+  }
+  if (argv[0] === "view" || argv[0] === "dashboard") {
+    const { runDashboard } = await import("./commands/dashboard.js");
+    await runDashboard(argv.slice(1));
     return;
   }
   const opts = parseCliArgs(argv);
