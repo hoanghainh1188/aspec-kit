@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-01
+
+### Added
+
+- **Interactive CLI Onboarding Wizard**:
+  - Interactive terminal wizard (`aspec-kit init` without `-y`) prompting for project directory, language pack (`vi` / `en` / `ja`), AI agent integrations, tech stack, and GitHub steward with smart git config defaults ([#55](https://github.com/hoanghainh1188/aspec-kit/issues/55), [#60](https://github.com/hoanghainh1188/aspec-kit/pull/60)).
+- **Project CI Quality Gates Workflow**:
+  - GitHub Actions project workflow `.github/workflows/project-ci.yml` scaffolded into projects to enforce strict zero-drift traceability (`traceability.py check --strict`), test specification consistency (`test_spec.py summary`), and automated test suite execution across stack choices (`ts`, `python`, `go`, `java`) ([#56](https://github.com/hoanghainh1188/aspec-kit/issues/56), [#61](https://github.com/hoanghainh1188/aspec-kit/pull/61)).
+- **Git Pre-commit Quality Guardrail Installer**:
+  - CLI command `aspec-kit hook [install|uninstall|status]` to install and manage quality guardrails in `.git/hooks/pre-commit` ([#57](https://github.com/hoanghainh1188/aspec-kit/issues/57), [#62](https://github.com/hoanghainh1188/aspec-kit/pull/62)):
+    - Blocks unresolved git merge conflict markers (`<<<<<<<` / `>>>>>>>`) in staged files.
+    - Protects upstream client design documents (`docs/01-basic-design`, `docs/02-detail-design`, `docs/03-ui`) from accidental overwrites.
+    - Validates glossary terminology consistency (`docs/00-glossary.md`) via `check-template.py`.
+    - Automatically executes `.claude/hooks/format.sh` on staged code files.
+    - Auto-installs hook during `aspec-kit init` when git repository is initialized.
+    - Added hook status check to `aspec-kit doctor`.
+- **Figma Live Assets Sync**:
+  - CLI command `aspec-kit figma sync <file-key|url> [options]` to fetch top-level screen frames directly via Figma REST API (`api.figma.com/v1`) with zero npm dependencies ([#58](https://github.com/hoanghainh1188/aspec-kit/issues/58), [#63](https://github.com/hoanghainh1188/aspec-kit/pull/63)):
+    - Supports SVG vector and PNG render export (scale 1x-4x) saved to `docs/03-ui/<slug>/screens/`.
+    - Automatically updates metadata and changelog in `docs/03-ui/<slug>/figma-links.md`.
+    - Updated `aspec-kit doctor` recommendation.
+- **Local Deliverables Dashboard & Viewer**:
+  - CLI command `aspec-kit view [project-dir] [--port 3000]` (and `aspec-kit dashboard`) to spin up a lightweight zero-dependency local HTTP dashboard for BrSE and PMs ([#59](https://github.com/hoanghainh1188/aspec-kit/issues/59), [#64](https://github.com/hoanghainh1188/aspec-kit/pull/64)):
+    - Interactive Traceability Matrix visualization (Design ➔ AC ➔ Tasks ➔ Code ➔ Tests).
+    - Q&A Sheets (質問票) viewer with status filters (*All / 回答済 / 未回答*).
+    - Test Specifications (テスト仕様書) viewer with test cases, preconditions, steps, and expected results.
+    - Weekly Progress Reports timeline from `docs/reports/`.
+    - JSON API endpoint at `/api/data`.
+
 ## [0.3.1] - 2026-10-31
 
 ### Fixed
