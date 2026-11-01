@@ -127,6 +127,7 @@ Options:
   -v, --version          Display CLI version
   -h, --help             Display this help message
   -y, --yes              Use default settings without interactive prompts
+  -i, --interactive      Force interactive prompt wizard
   --steward <handle>     GitHub handle (or @org/team, or email) for .github/CODEOWNERS
   --stack <stack>        Auto-configure formatter, permissions & CLAUDE.md for stack:
                          ts | python | go | java
@@ -207,6 +208,7 @@ export function parseCliArgs(argv) {
         help: { type: "boolean", short: "h" },
         version: { type: "boolean", short: "v" },
         yes: { type: "boolean", short: "y" },
+        interactive: { type: "boolean", short: "i" },
         steward: { type: "string" },
         stack: { type: "string" },
         lang: { type: "string" },
@@ -225,6 +227,9 @@ export function parseCliArgs(argv) {
 
   if (values["keep-example"] && values.clean) {
     throw new CliError("--keep-example and --clean cannot be used together.");
+  }
+  if (values.yes && values.interactive) {
+    throw new CliError("--yes and --interactive cannot be used together.");
   }
 
   const rest = [...positionals];
@@ -245,13 +250,18 @@ export function parseCliArgs(argv) {
     help: Boolean(values.help),
     version: Boolean(values.version),
     yes: Boolean(values.yes),
+    interactive: Boolean(values.interactive),
     steward: values.steward !== undefined ? normalizeSteward(values.steward) : null,
+    stewardExplicit: values.steward !== undefined,
     stack: values.stack !== undefined ? normalizeStack(values.stack, CliError) : null,
+    stackExplicit: values.stack !== undefined,
     lang: values.lang !== undefined ? normalizeLang(values.lang, CliError) : DEFAULT_LANG,
+    langExplicit: values.lang !== undefined,
     agents:
       values.agent !== undefined && values.agent.length > 0
         ? normalizeAgents(values.agent, CliError)
         : [...DEFAULT_AGENTS],
+    agentsExplicit: values.agent !== undefined && values.agent.length > 0,
     // null = ask the user; true/false = decided by flag
     keepExample: values["keep-example"] ? true : values.clean ? false : null,
     force: Boolean(values.force),
@@ -518,13 +528,114 @@ export async function fetchTemplate({ templateRef, cliVersion }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main
+// Interactive Wizard Helpers & Prompts
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function promptUser(rl, question, defaultValue) {
+/**
+ * Detect a default GitHub handle for the steward based on git config.
+ * Falls back to DEFAULT_STEWARD if git is not available or name cannot be resolved.
+ */
+export function detectDefaultSteward() {
+  try {
+    const gitUser = execFileSync("git", ["config", "github.user"], {
+      stdio: ["ignore", "pipe", "ignore"],
+      encoding: "utf-8",
+    }).trim();
+    if (gitUser && GITHUB_HANDLE_RE.test(gitUser)) {
+      return gitUser.startsWith("@") ? gitUser : `@${gitUser}`;
+    }
+  } catch {
+    // Ignore git command failure
+  }
+  try {
+    const gitName = execFileSync("git", ["config", "user.name"], {
+      stdio: ["ignore", "pipe", "ignore"],
+      encoding: "utf-8",
+    }).trim();
+    if (gitName) {
+      const sanitized = gitName.replace(/\s+/g, "-").replace(/[^A-Za-z0-9_-]/g, "");
+      if (sanitized && GITHUB_HANDLE_RE.test(sanitized)) {
+        return `@${sanitized}`;
+      }
+    }
+  } catch {
+    // Ignore git command failure
+  }
+  return DEFAULT_STEWARD;
+}
+
+export async function promptUser(rl, question, defaultValue) {
   const displayPrompt = defaultValue ? `${question} (${defaultValue}): ` : `${question}: `;
   const answer = await rl.question(displayPrompt);
   return answer.trim() || defaultValue;
+}
+
+/**
+ * Prompt the user to select one option from a numbered list.
+ * Accepts item index (1..N) or value/name.
+ */
+export async function promptSelect(rl, question, options, defaultValue) {
+  console.log(`\n${BOLD}${question}${RESET}`);
+  for (let i = 0; i < options.length; i++) {
+    const opt = options[i];
+    const isDef = opt.value === defaultValue;
+    const marker = isDef ? `${CYAN}*${RESET} ` : "  ";
+    const label = isDef ? `${opt.label} ${DIM}(default)${RESET}` : opt.label;
+    console.log(`${marker}${CYAN}${i + 1})${RESET} ${opt.value.padEnd(8)} ${DIM}—${RESET} ${label}`);
+  }
+  const defaultIdx = options.findIndex((o) => o.value === defaultValue) + 1;
+  const promptText = `Select [1-${options.length}] (${defaultIdx > 0 ? defaultIdx : 1}): `;
+  const answer = (await rl.question(promptText)).trim();
+  if (!answer) return defaultValue;
+
+  const num = parseInt(answer, 10);
+  if (!isNaN(num) && num >= 1 && num <= options.length) {
+    return options[num - 1].value;
+  }
+  const found = options.find((o) => o.value.toLowerCase() === answer.toLowerCase());
+  if (found) return found.value;
+
+  console.log(`${YELLOW}Invalid choice "${answer}", using default: ${defaultValue}${RESET}`);
+  return defaultValue;
+}
+
+/**
+ * Prompt the user to select one or more options from a numbered list.
+ * Accepts comma-separated indices (e.g. "1,2") or option values.
+ */
+export async function promptMultiSelect(rl, question, options, defaultValues) {
+  console.log(`\n${BOLD}${question}${RESET}`);
+  for (let i = 0; i < options.length; i++) {
+    const opt = options[i];
+    const isDef = defaultValues.includes(opt.value);
+    const marker = isDef ? `${CYAN}*${RESET} ` : "  ";
+    const label = isDef ? `${opt.label} ${DIM}(default)${RESET}` : opt.label;
+    console.log(`${marker}${CYAN}${i + 1})${RESET} ${opt.value.padEnd(8)} ${DIM}—${RESET} ${label}`);
+  }
+  const defaultIndices = defaultValues
+    .map((v) => options.findIndex((o) => o.value === v) + 1)
+    .filter((idx) => idx > 0);
+  const promptText = `Select one or more (comma-separated, e.g. 1 or 1,2) (${defaultIndices.join(",")}): `;
+  const answer = (await rl.question(promptText)).trim();
+  if (!answer) return defaultValues;
+
+  const parts = answer.split(",").map((s) => s.trim()).filter(Boolean);
+  const selected = new Set();
+  for (const part of parts) {
+    const num = parseInt(part, 10);
+    if (!isNaN(num) && num >= 1 && num <= options.length) {
+      selected.add(options[num - 1].value);
+    } else {
+      const found = options.find((o) => o.value.toLowerCase() === part.toLowerCase());
+      if (found) selected.add(found.value);
+    }
+  }
+
+  if (selected.size === 0) {
+    console.log(`${YELLOW}No valid choices selected, using default: ${defaultValues.join(", ")}${RESET}`);
+    return defaultValues;
+  }
+  return [...selected];
 }
 
 function printFileList(title, files, limit = 15) {
@@ -565,9 +676,12 @@ export async function main(argv = process.argv.slice(2)) {
 
   // Readline is created lazily so non-interactive runs (-y) never wait on stdin
   let rl = null;
-  const ask = async (question, defaultValue) => {
+  const getRl = () => {
     rl ??= readline.createInterface({ input: process.stdin, output: process.stdout });
-    return promptUser(rl, question, defaultValue);
+    return rl;
+  };
+  const ask = async (question, defaultValue) => {
+    return promptUser(getRl(), question, defaultValue);
   };
 
   let templateHandle = null;
@@ -593,27 +707,88 @@ export async function main(argv = process.argv.slice(2)) {
       }
     }
 
-    // 2. Steward handle (validated)
-    let steward = opts.steward;
-    if (!steward) {
-      steward = opts.yes
-        ? DEFAULT_STEWARD
-        : await ask("GitHub handle of project Steward (for .github/CODEOWNERS)", DEFAULT_STEWARD);
-      if (steward !== DEFAULT_STEWARD) steward = normalizeSteward(steward);
+    // 2. Language selection
+    let lang = opts.lang;
+    if (!opts.langExplicit && !opts.yes) {
+      lang = await promptSelect(
+        getRl(),
+        "🌐 Template language pack (documentation, agents, runbooks):",
+        [
+          { value: "vi", label: "Tiếng Việt (mặc định - tối ưu cho team offshore Việt-Nhật)" },
+          { value: "en", label: "English (global standard)" },
+          { value: "ja", label: "日本語 (native Japanese)" },
+        ],
+        DEFAULT_LANG
+      );
     }
 
-    // 3. Keep sample feature?
+    // 3. AI Agent integration
+    let agents = opts.agents;
+    if (!opts.agentsExplicit && !opts.yes) {
+      agents = await promptMultiSelect(
+        getRl(),
+        "🤖 Target AI agent integration(s):",
+        [
+          { value: "claude", label: "Claude Code CLI / IDE (.claude/)" },
+          { value: "gemini", label: "Google Gemini Code Assist (GEMINI.md)" },
+          { value: "copilot", label: "GitHub Copilot (.github/copilot-instructions.md)" },
+          { value: "cursor", label: "Cursor AI IDE (.cursor/rules/aspec-kit.mdc)" },
+        ],
+        DEFAULT_AGENTS
+      );
+    }
+
+    // 4. Tech stack configuration
+    let stack = opts.stack;
+    if (!opts.stackExplicit && !opts.yes) {
+      const chosenStack = await promptSelect(
+        getRl(),
+        "⚙️  Project tech stack (auto-configures formatter hook & test permissions):",
+        [
+          { value: "none", label: "Stack-agnostic / configure later" },
+          { value: "ts", label: "TypeScript / JavaScript (Prettier + npm test/build)" },
+          { value: "python", label: "Python (Ruff + pytest)" },
+          { value: "go", label: "Go (gofmt + go test)" },
+          { value: "java", label: "Java (Spotless/google-java-format + gradle/mvn)" },
+        ],
+        "none"
+      );
+      stack = chosenStack === "none" ? null : chosenStack;
+    }
+
+    // 5. Steward handle (validated)
+    let steward = opts.steward;
+    if (!opts.stewardExplicit) {
+      const suggestedSteward = detectDefaultSteward();
+      if (opts.yes) {
+        steward = DEFAULT_STEWARD;
+      } else {
+        while (!steward) {
+          const raw = await ask(
+            "👤 GitHub handle of project Steward (for .github/CODEOWNERS)",
+            suggestedSteward
+          );
+          try {
+            steward = raw === DEFAULT_STEWARD ? DEFAULT_STEWARD : normalizeSteward(raw);
+          } catch (err) {
+            warn(err.message);
+          }
+        }
+      }
+    }
+
+    // 6. Keep sample feature?
     const keepExample =
       opts.keepExample ??
       (opts.yes
         ? false
-        : (await ask("Keep sample feature (000-example-reservation) for reference? (y/N)", "N"))
+        : (await ask("📦 Keep sample feature (000-example-reservation) for reference? (y/N)", "N"))
             .toLowerCase() === "y");
 
     rl?.close();
     rl = null;
 
-    // 4. Fetch template & copy (safe by default)
+    // 7. Fetch template & copy (safe by default)
     templateHandle = await fetchTemplate({ templateRef: opts.templateRef, cliVersion: pkg.version });
     console.log("==> Scaffolding project files...");
     const result = copyTemplate(templateHandle.dir, targetDir, { force: opts.force });
@@ -627,14 +802,14 @@ export async function main(argv = process.argv.slice(2)) {
       printFileList(`${YELLOW}   Overwritten${RESET}`, result.overwritten);
     }
 
-    // 5. Customize project configuration
+    // 8. Customize project configuration
     console.log("==> Customizing project files...");
-    if (opts.lang && opts.lang !== DEFAULT_LANG) {
-      const langUpdated = applyLang(targetDir, templateHandle.dir, opts.lang, ownedFiles);
+    if (lang && lang !== DEFAULT_LANG) {
+      const langUpdated = applyLang(targetDir, templateHandle.dir, lang, ownedFiles);
       if (langUpdated.length > 0) {
-        console.log(`✓ Applied "${opts.lang}" language pack (${langUpdated.length} files)`);
+        console.log(`✓ Applied "${lang}" language pack (${langUpdated.length} files)`);
       } else {
-        warn(`Language pack "${opts.lang}" had no matching files to apply.`);
+        warn(`Language pack "${lang}" had no matching files to apply.`);
       }
     }
 
@@ -645,20 +820,20 @@ export async function main(argv = process.argv.slice(2)) {
       warn(".github/CODEOWNERS was not created by this run — steward not applied.");
     }
 
-    const stackModified = opts.stack ? applyStack(targetDir, opts.stack, ownedFiles) : [];
-    if (opts.stack) {
+    const stackModified = stack ? applyStack(targetDir, stack, ownedFiles) : [];
+    if (stack) {
       if (stackModified.length > 0) {
-        console.log(`✓ Configured stack "${opts.stack}" (${stackModified.join(", ")})`);
+        console.log(`✓ Configured stack "${stack}" (${stackModified.join(", ")})`);
       } else {
-        warn(`Stack "${opts.stack}" could not be applied (target files were not created by this run).`);
+        warn(`Stack "${stack}" could not be applied (target files were not created by this run).`);
       }
     }
 
     const isDefaultClaudeOnly =
-      opts.agents.length === 1 && opts.agents[0] === "claude";
+      agents.length === 1 && agents[0] === "claude";
     if (!isDefaultClaudeOnly) {
-      const agentFiles = applyAgents(targetDir, opts.agents, ownedFiles, { force: opts.force });
-      console.log(`✓ Configured agent integration (${opts.agents.join(", ")}): ${agentFiles.join(", ")}`);
+      const agentFiles = applyAgents(targetDir, agents, ownedFiles, { force: opts.force });
+      console.log(`✓ Configured agent integration (${agents.join(", ")}): ${agentFiles.join(", ")}`);
     }
 
     if (!keepExample) {
@@ -684,9 +859,9 @@ export async function main(argv = process.argv.slice(2)) {
         templateRef: templateHandle.ref,
         cliVersion: pkg.version,
         steward: stewardApplied ? steward : previous?.steward ?? null,
-        stack: stackModified.length > 0 ? opts.stack : previous?.stack ?? null,
-        lang: opts.lang !== DEFAULT_LANG ? opts.lang : previous?.lang ?? null,
-        agents: !isDefaultClaudeOnly ? opts.agents : previous?.agents ?? null,
+        stack: stackModified.length > 0 ? stack : previous?.stack ?? null,
+        lang: lang !== DEFAULT_LANG ? lang : previous?.lang ?? null,
+        agents: !isDefaultClaudeOnly ? agents : previous?.agents ?? null,
         files: { ...previous?.files, ...hashProjectFiles(targetDir, ownedFiles) },
       })
     );

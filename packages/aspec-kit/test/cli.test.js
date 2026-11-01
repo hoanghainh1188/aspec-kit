@@ -23,6 +23,7 @@ import {
   applyStack,
   applySteward,
   copyTemplate,
+  detectDefaultSteward,
   isExcluded,
   listTemplateFiles,
   normalizeAgents,
@@ -30,6 +31,9 @@ import {
   normalizeStack,
   normalizeSteward,
   parseCliArgs,
+  promptMultiSelect,
+  promptSelect,
+  promptUser,
   readIgnoreFile,
   removeSampleFeature,
   writeProjectReadme,
@@ -163,6 +167,122 @@ describe("parseCliArgs", () => {
     }
     assert.throws(() => parseCliArgs(["--stack", "ruby"]), CliError);
     assert.throws(() => parseCliArgs(["--stack"]), CliError);
+  });
+
+  test("--interactive and -i are parsed and conflict with -y", () => {
+    assert.equal(parseCliArgs([]).interactive, false);
+    assert.equal(parseCliArgs(["--interactive"]).interactive, true);
+    assert.equal(parseCliArgs(["-i"]).interactive, true);
+    assert.throws(
+      () => parseCliArgs(["-y", "--interactive"]),
+      /--yes and --interactive cannot be used together/
+    );
+    assert.throws(
+      () => parseCliArgs(["-y", "-i"]),
+      /--yes and --interactive cannot be used together/
+    );
+  });
+
+  test("explicit flags are tracked correctly for wizard defaults", () => {
+    const empty = parseCliArgs([]);
+    assert.equal(empty.stewardExplicit, false);
+    assert.equal(empty.stackExplicit, false);
+    assert.equal(empty.langExplicit, false);
+    assert.equal(empty.agentsExplicit, false);
+
+    const full = parseCliArgs([
+      "--steward", "my-lead",
+      "--stack", "ts",
+      "--lang", "ja",
+      "--agent", "gemini",
+    ]);
+    assert.equal(full.stewardExplicit, true);
+    assert.equal(full.stackExplicit, true);
+    assert.equal(full.langExplicit, true);
+    assert.equal(full.agentsExplicit, true);
+  });
+});
+
+describe("wizard prompts & helpers", () => {
+  const makeMockRl = (responses) => {
+    const queue = [...responses];
+    return {
+      question: async () => queue.shift() ?? "",
+    };
+  };
+
+  test("detectDefaultSteward returns a handle starting with @", () => {
+    const handle = detectDefaultSteward();
+    assert.ok(typeof handle === "string");
+    assert.ok(handle.startsWith("@"));
+  });
+
+  test("promptUser returns trimmed input or default", async () => {
+    const rl1 = makeMockRl(["  my-app  "]);
+    assert.equal(await promptUser(rl1, "Project name", "default-app"), "my-app");
+
+    const rl2 = makeMockRl([""]);
+    assert.equal(await promptUser(rl2, "Project name", "default-app"), "default-app");
+  });
+
+  test("promptSelect accepts index, value, or falls back to default", async () => {
+    const options = [
+      { value: "vi", label: "Tiếng Việt" },
+      { value: "en", label: "English" },
+      { value: "ja", label: "Japanese" },
+    ];
+
+    // Empty answer -> default
+    assert.equal(await promptSelect(makeMockRl([""]), "Lang", options, "vi"), "vi");
+
+    // 1-based index
+    assert.equal(await promptSelect(makeMockRl(["2"]), "Lang", options, "vi"), "en");
+    assert.equal(await promptSelect(makeMockRl(["3"]), "Lang", options, "vi"), "ja");
+
+    // Match by value
+    assert.equal(await promptSelect(makeMockRl(["en"]), "Lang", options, "vi"), "en");
+    assert.equal(await promptSelect(makeMockRl(["JA"]), "Lang", options, "vi"), "ja");
+
+    // Invalid choice -> fallback to default
+    assert.equal(await promptSelect(makeMockRl(["99"]), "Lang", options, "vi"), "vi");
+    assert.equal(await promptSelect(makeMockRl(["unknown"]), "Lang", options, "vi"), "vi");
+  });
+
+  test("promptMultiSelect accepts single, multiple, or falls back to default", async () => {
+    const options = [
+      { value: "claude", label: "Claude" },
+      { value: "gemini", label: "Gemini" },
+      { value: "copilot", label: "Copilot" },
+      { value: "cursor", label: "Cursor" },
+    ];
+
+    // Empty answer -> default
+    assert.deepEqual(
+      await promptMultiSelect(makeMockRl([""]), "Agents", options, ["claude"]),
+      ["claude"]
+    );
+
+    // Numbered selection
+    assert.deepEqual(
+      await promptMultiSelect(makeMockRl(["2"]), "Agents", options, ["claude"]),
+      ["gemini"]
+    );
+    assert.deepEqual(
+      await promptMultiSelect(makeMockRl(["1,3"]), "Agents", options, ["claude"]),
+      ["claude", "copilot"]
+    );
+
+    // Named selection
+    assert.deepEqual(
+      await promptMultiSelect(makeMockRl(["gemini, cursor"]), "Agents", options, ["claude"]),
+      ["gemini", "cursor"]
+    );
+
+    // Invalid choices -> fallback
+    assert.deepEqual(
+      await promptMultiSelect(makeMockRl(["99, foo"]), "Agents", options, ["claude"]),
+      ["claude"]
+    );
   });
 });
 

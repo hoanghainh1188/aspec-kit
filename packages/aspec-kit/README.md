@@ -64,6 +64,7 @@ npx @hoanghainh/aspec-kit convert <file.xlsx|file.xlsm|file.pdf> [--out <dir>] [
 |---|---|:---:|
 | `[project-directory]` | Target directory name for the new project | `my-aspec-app` |
 | `-y, --yes` | Skip interactive prompts and accept all defaults | `false` |
+| `-i, --interactive` | Force interactive prompt wizard for language, agents, stack and steward | `true` (when `-y` is omitted) |
 | `--steward <handle>` | Specify GitHub handle of project Steward for `.github/CODEOWNERS` | `@your-handle` |
 | `--stack <stack>` | Auto-configure `.claude/hooks/format.sh`, `.claude/settings.json` permissions & `CLAUDE.md` tech stack (`ts`, `python`, `go`, `java`) | — |
 | `--lang <lang>` | Language of scaffolded conventions (`CLAUDE.md`, `TEAM-WORKFLOW.md`, subagents, commands): `vi`, `en`, `ja` | `vi` |
