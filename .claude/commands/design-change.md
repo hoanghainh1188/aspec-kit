@@ -24,7 +24,7 @@ Quy ước: **[TỰ CHẠY]** = bạn tự làm · **[DỪNG]** = chờ người
      mục 8). Thiếu → cảnh báo người dùng (vẫn phân tích được, nhưng nhắc bổ sung CHANGELOG).
 
 2. **[TỰ CHẠY] Gọi subagent `impact-analyzer`** (qua Task tool) với: đường dẫn cũ, mới, `<slug>`,
-   ngày hôm nay. Nó diff theo đơn vị nghiệp vụ (field / validation / màn hình), lần ngược tới
+   ngày hôm nay. Nếu input thuộc `docs/03-ui/` (ảnh SVG wireframe), chạy `npx @hoanghainh/aspec-kit figma diff <cũ.svg> <mới.svg>` để tạo visual overlay và bản tóm tắt thay đổi giao diện. Nó diff theo đơn vị nghiệp vụ (field / validation / màn hình), lần ngược tới
    `docs/intake/`, AC trong `specs/*<slug>*/spec.md`, `plan.md`, task trong `tasks.md`,
    `src/features/<slug>/` và test — và trả về nội dung báo cáo 3 phần.
 

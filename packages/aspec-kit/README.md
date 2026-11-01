@@ -58,6 +58,7 @@ npx @hoanghainh/aspec-kit view [project-directory] [--port 3000]
   to Markdown (see [Convert design documents](#convert-design-documents)).
 - `hook [install|uninstall|status] [dir]`: Manages Git pre-commit quality guardrail hooks (see [Git pre-commit guardrail](#git-pre-commit-guardrail)).
 - `figma sync <file-key|url>`: Syncs Figma wireframe frames and vector assets via Figma REST API (see [Figma Live Assets Sync](#figma-live-assets-sync)).
+- `figma diff <file1> <file2>`: Compares two wireframe SVGs and generates visual overlay diff + Markdown report.
 - `view [dir] [--port 3000]`: Launches a local zero-dependency HTML dashboard for client deliverables & traceability (see [Local Deliverables Dashboard](#local-deliverables-dashboard)).
 
 > `update`, `doctor` and `convert` are command names, so `npx @hoanghainh/aspec-kit update` no longer
@@ -237,6 +238,19 @@ npx @hoanghainh/aspec-kit figma sync AbCdEf12345 --slug user-reservation --forma
   - Rendered screens: `docs/03-ui/<slug>/screens/<frame-name>.<svg|png>`
   - UI Metadata & Links: `docs/03-ui/<slug>/figma-links.md` (records node IDs, direct links, sync timestamp, and changelog)
 - **Zero dependencies**: Uses Node.js native `fetch` to interact directly with Figma REST API (`api.figma.com/v1`).
+
+### Figma Wireframe Visual Diff (`aspec-kit figma diff`)
+
+Compare two versions of an SVG wireframe and generate an annotated visual overlay plus a Japanese Markdown diff report:
+
+```bash
+# Compare two SVG wireframes
+npx @hoanghainh/aspec-kit figma diff docs/03-ui/reservation/screens/v1.svg docs/03-ui/reservation/screens/v2.svg --out docs/03-ui/reservation/diffs/
+```
+
+- **Outputs**:
+  - Visual Overlay SVG (`<screen>-diff.svg`): Highlights added elements in green (`#22c55e`), removed elements in red (`#ef4444`), and modified/moved elements in yellow (`#eab308`).
+  - Markdown Report (`<screen>-diff.md`): Japanese summary table of changes for client 仕様変更 discussions.
 
 ---
 

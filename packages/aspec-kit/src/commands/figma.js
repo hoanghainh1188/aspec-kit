@@ -17,9 +17,11 @@ export const FIGMA_API_BASE = "https://api.figma.com/v1";
 
 const HELP_TEXT = `Usage:
   npx @hoanghainh/aspec-kit figma sync <file-key-or-url> [options]
+  npx @hoanghainh/aspec-kit figma diff <file1.svg> <file2.svg> [options]
 
 Commands:
   sync <file-key|url>   Fetch Figma document frames and export render assets (SVG/PNG)
+  diff <file1> <file2>  Compare two wireframe SVGs and generate visual diff + report
 
 Options:
   --slug <feature-slug> Feature slug for docs/03-ui/<slug>/ (defaults to auto-derived from file name)
@@ -27,6 +29,7 @@ Options:
   --scale <1|2|3|4>     Export image render scale (default: 2 for png, 1 for svg)
   --token <token>       Figma Personal Access Token (defaults to env FIGMA_PERSONAL_TOKEN)
   --node-id <id>        Comma-separated Figma node IDs to filter (e.g. 1:23,4:56)
+  --out <dir>           Output directory for diffs
   --dir <path>          Project root directory (default: .)
   -h, --help            Display this help message
 
@@ -387,6 +390,12 @@ export async function runFigma(args) {
 
   if (values.help) {
     console.log(HELP_TEXT);
+    return;
+  }
+
+  if (positionals[0] === "diff") {
+    const { runFigmaDiff } = await import("./figma-diff.js");
+    await runFigmaDiff(args);
     return;
   }
 

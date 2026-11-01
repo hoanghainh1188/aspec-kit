@@ -61,6 +61,14 @@ import {
   startDashboardServer,
 } from "../src/commands/dashboard.js";
 import {
+  compareFigmaSvgFiles,
+  diffSvgElements,
+  extractSvgDimensions,
+  generateMarkdownDiffReport,
+  generateOverlaySvg,
+  parseSvgElements,
+} from "../src/commands/figma-diff.js";
+import {
   BOOTSTRAP_SKILLS,
   checkBranchProtection,
   doctorCommand,
@@ -1430,6 +1438,103 @@ describe("aspec-kit view / dashboard", () => {
     assert.equal(Array.isArray(jsonData.qaSheets), true);
 
     await serverInstance.close();
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+});
+
+describe("aspec-kit figma diff", () => {
+  test("extractSvgDimensions reads width, height and viewBox", () => {
+    const svg1 = `<svg width="400px" height="300px"><rect /></svg>`;
+    const dims1 = extractSvgDimensions(svg1);
+    assert.equal(dims1.width, 400);
+    assert.equal(dims1.height, 300);
+
+    const svg2 = `<svg viewBox="0 0 1024 768"></svg>`;
+    const dims2 = extractSvgDimensions(svg2);
+    assert.equal(dims2.width, 1024);
+    assert.equal(dims2.height, 768);
+  });
+
+  test("parseSvgElements extracts text, rects, and circles", () => {
+    const svg = `
+      <svg viewBox="0 0 500 500">
+        <rect x="10" y="20" width="100" height="40" fill="#38bdf8" />
+        <text x="25" y="45" fill="#ffffff" font-size="14">Submit</text>
+        <circle cx="50" cy="50" r="15" fill="#ef4444" />
+      </svg>
+    `;
+    const elements = parseSvgElements(svg);
+    assert.equal(elements.length, 3);
+    assert.equal(elements[0].type, "text");
+    assert.equal(elements[0].text, "Submit");
+    assert.equal(elements[1].type, "rect");
+    assert.equal(elements[1].width, 100);
+    assert.equal(elements[2].type, "circle");
+    assert.equal(elements[2].r, 15);
+  });
+
+  test("diffSvgElements detects added, removed, and modified elements", () => {
+    const oldSvg = `
+      <svg viewBox="0 0 500 500">
+        <rect x="10" y="20" width="100" height="40" fill="#000000" />
+        <text x="25" y="45" fill="#ffffff">Old Title</text>
+        <circle cx="200" cy="200" r="10" />
+      </svg>
+    `;
+    const newSvg = `
+      <svg viewBox="0 0 500 500">
+        <rect x="10" y="20" width="100" height="40" fill="#38bdf8" />
+        <text x="25" y="80" fill="#ffffff">Old Title</text>
+        <text x="50" y="150" fill="#22c55e">New Button</text>
+      </svg>
+    `;
+
+    const oldEl = parseSvgElements(oldSvg);
+    const newEl = parseSvgElements(newSvg);
+    const diff = diffSvgElements(oldEl, newEl);
+
+    // Added: "New Button"
+    assert.equal(diff.added.length, 1);
+    assert.equal(diff.added[0].text, "New Button");
+
+    // Removed: circle
+    assert.equal(diff.removed.length, 1);
+    assert.equal(diff.removed[0].type, "circle");
+
+    // Modified: rect fill changed & text position moved
+    assert.equal(diff.modified.length, 2);
+  });
+
+  test("compareFigmaSvgFiles generates overlay SVG and Markdown report", async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "aspec-diff-"));
+    const v1Path = path.join(tmp, "reservation-v1.svg");
+    const v2Path = path.join(tmp, "reservation-v2.svg");
+
+    fs.writeFileSync(
+      v1Path,
+      `<svg viewBox="0 0 400 300"><text x="10" y="30">Screen V1</text><rect x="20" y="50" width="80" height="30" fill="#ccc"/></svg>`
+    );
+    fs.writeFileSync(
+      v2Path,
+      `<svg viewBox="0 0 400 300"><text x="10" y="30">Screen V1</text><rect x="20" y="50" width="80" height="30" fill="#00f"/><text x="120" y="50">New Field</text></svg>`
+    );
+
+    const res = await compareFigmaSvgFiles(v1Path, v2Path, {
+      outDir: path.join(tmp, "diffs"),
+      logger: { log: () => {} },
+    });
+
+    assert.equal(fs.existsSync(res.overlaySvgPath), true);
+    assert.equal(fs.existsSync(res.mdReportPath), true);
+
+    const svgContent = fs.readFileSync(res.overlaySvgPath, "utf8");
+    assert.match(svgContent, /Figma Visual Diff Legend/);
+    assert.match(svgContent, /rgba\(34, 197, 94/); // green highlight
+
+    const mdContent = fs.readFileSync(res.mdReportPath, "utf8");
+    assert.match(mdContent, /画面デザイン差分報告書/);
+    assert.match(mdContent, /New Field/);
+
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 });
