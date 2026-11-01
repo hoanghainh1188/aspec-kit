@@ -133,6 +133,7 @@ Commands:
                          (install | uninstall | status; see 'hook --help')
   figma sync <file|url>  Fetch and sync Figma screen wireframes and vector assets
                          (options: --slug, --format svg|png; see 'figma --help')
+  figma diff <s1> <s2>   Compare wireframe SVGs and generate visual diff + report
   view [dir] [--port P]  Launch local HTML deliverables dashboard (traceability, QA, reports)
 
 Options:
