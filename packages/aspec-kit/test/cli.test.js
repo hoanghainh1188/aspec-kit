@@ -55,6 +55,12 @@ import {
   syncFigma,
 } from "../src/commands/figma.js";
 import {
+  collectDashboardData,
+  parseCsv,
+  renderDashboardHtml,
+  startDashboardServer,
+} from "../src/commands/dashboard.js";
+import {
   BOOTSTRAP_SKILLS,
   checkBranchProtection,
   doctorCommand,
@@ -1330,5 +1336,100 @@ describe("aspec-kit figma sync", () => {
     } finally {
       if (oldToken) process.env.FIGMA_PERSONAL_TOKEN = oldToken;
     }
+  });
+});
+
+describe("aspec-kit view / dashboard", () => {
+  test("parseCsv handles commas, multiline fields, and quotes", () => {
+    const csv = `"No","Title","Notes"\n"1","Hello, World","Line 1\nLine 2"\n"2","Simple",""`;
+    const rows = parseCsv(csv);
+    assert.equal(rows.length, 3);
+    assert.deepEqual(rows[0], ["No", "Title", "Notes"]);
+    assert.equal(rows[1][1], "Hello, World");
+    assert.equal(rows[1][2], "Line 1\nLine 2");
+    assert.equal(rows[2][0], "2");
+  });
+
+  test("collectDashboardData parses deliverables from project directory", () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "aspec-dash-"));
+    const qaDir = path.join(tmp, "docs/qa");
+    const testSpecDir = path.join(tmp, "docs/test-specs");
+    const reportsDir = path.join(tmp, "docs/reports");
+    fs.mkdirSync(qaDir, { recursive: true });
+    fs.mkdirSync(testSpecDir, { recursive: true });
+    fs.mkdirSync(reportsDir, { recursive: true });
+
+    // Mock traceability.md
+    fs.writeFileSync(
+      path.join(tmp, "docs/traceability.md"),
+      `# Traceability Matrix\n\n| AC | Mô tả | Nguồn | Tasks | Files | Tests | Trạng thái |\n|---|---|---|---|---|---|---|\n| **AC 1** | Desc 1 | Source | T1 | file.ts | test.ts | ✅ Covered |\n`
+    );
+
+    // Mock Q&A CSV
+    fs.writeFileSync(
+      path.join(qaDir, "001-feature.csv"),
+      `"No","対象画面/機能","質問内容","背景・提案","回答欄","回答期限","ステータス"\n"Q-01","SCR-01","Question?","Background","Answer","2026-11-01","回答済"\n`
+    );
+
+    // Mock Test Spec CSV
+    fs.writeFileSync(
+      path.join(testSpecDir, "001-feature.csv"),
+      `"No","観点","前提条件","手順","期待結果","結果","備考"\n"TC-01","Login","Valid","Step 1","Expect 1","OK","AC 1"\n`
+    );
+
+    // Mock Weekly Report
+    fs.writeFileSync(
+      path.join(reportsDir, "2026-10-31-progress.md"),
+      `# Weekly Report — Feature 001\n\nCompleted tasks.\n`
+    );
+
+    const data = collectDashboardData(tmp);
+    assert.equal(data.traceability.length, 1);
+    assert.equal(data.traceability[0].ac, "AC 1");
+    assert.equal(data.qaSheets.length, 1);
+    assert.equal(data.qaSheets[0].items.length, 1);
+    assert.equal(data.qaSheets[0].items[0]["No"], "Q-01");
+    assert.equal(data.testSpecs.length, 1);
+    assert.equal(data.testSpecs[0].items[0]["No"], "TC-01");
+    assert.equal(data.reports.length, 1);
+    assert.equal(data.reports[0].title, "Weekly Report — Feature 001");
+
+    const html = renderDashboardHtml(data);
+    assert.match(html, /aspec-kit Deliverables Dashboard/);
+    assert.match(html, /要件トレーサビリティマトリクス/);
+    assert.match(html, /Q-01/);
+    assert.match(html, /TC-01/);
+
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  test("startDashboardServer spins up HTTP server and answers /api/data & /", async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "aspec-server-"));
+    const serverInstance = await startDashboardServer({
+      projectDir: tmp,
+      port: 0, // dynamic port
+      host: "127.0.0.1",
+      logger: { log: () => {} },
+    });
+
+    const addr = serverInstance.server.address();
+    const port = addr.port;
+
+    // Test GET /
+    const htmlRes = await fetch(`http://127.0.0.1:${port}/`);
+    assert.equal(htmlRes.status, 200);
+    const htmlText = await htmlRes.text();
+    assert.match(htmlText, /<!DOCTYPE html>/);
+    assert.match(htmlText, /aspec-kit Deliverables Dashboard/);
+
+    // Test GET /api/data
+    const jsonRes = await fetch(`http://127.0.0.1:${port}/api/data`);
+    assert.equal(jsonRes.status, 200);
+    const jsonData = await jsonRes.json();
+    assert.equal(Array.isArray(jsonData.traceability), true);
+    assert.equal(Array.isArray(jsonData.qaSheets), true);
+
+    await serverInstance.close();
+    fs.rmSync(tmp, { recursive: true, force: true });
   });
 });

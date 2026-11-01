@@ -46,6 +46,7 @@ npx @hoanghainh/aspec-kit doctor [project-directory] [--json]
 npx @hoanghainh/aspec-kit convert <file.xlsx|file.xlsm|file.pdf> [--out <dir>] [--force]
 npx @hoanghainh/aspec-kit hook [install|uninstall|status] [project-directory]
 npx @hoanghainh/aspec-kit figma sync <file-key|url> [options]
+npx @hoanghainh/aspec-kit view [project-directory] [--port 3000]
 ```
 
 ### Commands
@@ -57,6 +58,7 @@ npx @hoanghainh/aspec-kit figma sync <file-key|url> [options]
   to Markdown (see [Convert design documents](#convert-design-documents)).
 - `hook [install|uninstall|status] [dir]`: Manages Git pre-commit quality guardrail hooks (see [Git pre-commit guardrail](#git-pre-commit-guardrail)).
 - `figma sync <file-key|url>`: Syncs Figma wireframe frames and vector assets via Figma REST API (see [Figma Live Assets Sync](#figma-live-assets-sync)).
+- `view [dir] [--port 3000]`: Launches a local zero-dependency HTML dashboard for client deliverables & traceability (see [Local Deliverables Dashboard](#local-deliverables-dashboard)).
 
 > `update`, `doctor` and `convert` are command names, so `npx @hoanghainh/aspec-kit update` no longer
 > scaffolds into a directory called `update`. To create a directory with one of these names, use
@@ -235,6 +237,27 @@ npx @hoanghainh/aspec-kit figma sync AbCdEf12345 --slug user-reservation --forma
   - Rendered screens: `docs/03-ui/<slug>/screens/<frame-name>.<svg|png>`
   - UI Metadata & Links: `docs/03-ui/<slug>/figma-links.md` (records node IDs, direct links, sync timestamp, and changelog)
 - **Zero dependencies**: Uses Node.js native `fetch` to interact directly with Figma REST API (`api.figma.com/v1`).
+
+---
+
+## Local Deliverables Dashboard (`aspec-kit view` / `aspec-kit dashboard`)
+
+Spin up a lightweight zero-dependency local web dashboard for BrSE and Project Managers:
+
+```bash
+# Start local deliverables dashboard on default port (3000)
+npx @hoanghainh/aspec-kit view
+
+# Or specify a custom port
+npx @hoanghainh/aspec-kit dashboard --port 8080
+```
+
+### Dashboard Views:
+- **Traceability Matrix**: Interactive table linking Design Intake ➔ Acceptance Criteria (AC) ➔ Tasks ➔ Code files ➔ Unit test cases.
+- **Q&A Sheets (質問票)**: Visual query interface for client inquiries with status filters (*All / Answered 回答済 / Open 未回答*).
+- **Test Specifications (テスト仕様書)**: View test cases with preconditions, steps, expected results, and execution statuses.
+- **Weekly Progress Reports**: Timeline accordion view of progress deliverables from `docs/reports/`.
+- **API Endpoint**: Serves live project JSON metadata via `http://localhost:3000/api/data`.
 
 ---
 
