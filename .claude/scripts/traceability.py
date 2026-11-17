@@ -33,15 +33,19 @@ NUMBERED_ITEM_RE = re.compile(r"^\s*(\d+)\.\s+(.+)$")
 TASK_LINE_RE = re.compile(
     r"^\s*-\s*\[([ xX])\]\s*(?:\*\*([A-Za-z0-9_-]+)\*\*\s*(?:[—–-]\s*)?)?(.+)$"
 )
-# Matches AC references such as: AC 2, AC 2, 3, AC 2/3/4, AC-1, AC1..3
-AC_GROUP_RE = re.compile(r"\bAC[-_\s]*(\d+(?:\s*(?:[,/&]|and)\s*\d+)*)", re.IGNORECASE)
+# Matches AC references such as: AC 2, AC 2, 3, AC 2/3/4, AC-1, AC_1, AC1..3 (including inside Go/Python/Java identifiers)
+AC_GROUP_RE = re.compile(r"(?:^|(?<=[_\W]))AC[-_\s]*(\d+(?:\s*(?:[,/&]|and)\s*\d+)*)", re.IGNORECASE)
 BACKTICK_PATH_RE = re.compile(
     r"`((?![^`]*@)[A-Za-z0-9_./-]+\.(?:ts|tsx|js|jsx|mjs|cjs|py|go|java|kt|rs|rb|cs|php|sql|vue|svelte|css|scss|html))`"
 )
 
-# Matches test blocks: it("...", ...), test("...", ...), def test_...
+# Matches test blocks across JS/TS (`it`/`test`), Python (`def test_...`), Go (`func Test...` / `t.Run(...)`), and Java (`@Test`/`@DisplayName`)
 TEST_CASE_RE = re.compile(
-    r"""(?:^|\s)(?:it|test)\s*\(\s*(['"`])(.+?)\1|^\s*def\s+(test_[a-zA-Z0-9_]+)""",
+    r"""(?:^|\s)(?:it|test|t\.Run)\s*\(\s*(['"`])(.+?)\1"""
+    r"""|^\s*def\s+(test_[a-zA-Z0-9_]+)(?:\s*\([^)]*\))?(?:\s*->[^:\n]+)?\s*:(?:\s*#.*|\s*\n\s*"{3}([^"\n]+))?"""
+    r"""|^\s*func\s+(Test[A-Za-z0-9_]+)\s*\([^)]*\)(?:\s*\{)?(?:\s*//\s*(.+))?"""
+    r"""|@DisplayName\s*\(\s*"([^"]+)"\s*\)"""
+    r"""|@Test\b(?:\s*\([^)]*\))?\s*(?://\s*([^\n]+)\s*)?(?:public\s+|private\s+|protected\s+)?void\s+([a-zA-Z0-9_]+)\s*\(""",
     re.MULTILINE,
 )
 
@@ -202,7 +206,10 @@ def scan_feature_code_and_tests(root: str, slug: str) -> tuple[list[dict[str, An
 
             if is_test_file(rel_p):
                 for m in TEST_CASE_RE.finditer(content):
-                    name = (m.group(2) or m.group(3) or "").strip()
+                    parts = [g.strip() for g in m.groups()[1:] if g and g.strip()]
+                    name = " — ".join(parts) if parts else ""
+                    if not name:
+                        continue
                     acs = extract_ac_numbers(name)
                     test_cases.append({
                         "file": rel_p,

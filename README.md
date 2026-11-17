@@ -105,9 +105,13 @@ The npm CLI has no dependencies and covers the whole lifecycle of a project. Ful
 | Command | What it does |
 |---|---|
 | `npx @hoanghainh/aspec-kit init <dir>` | Scaffold a new project. Existing files are never overwritten without `--force`. |
-| `npx @hoanghainh/aspec-kit update [--dry-run] [--to <ref>]` | Pull template fixes into an existing project with a 3-way merge. Client docs, glossary, decisions, intake, changes, Q&A sheets, specs, `src/` and `tests/` are never touched. |
+| `npx @hoanghainh/aspec-kit update [--dry-run] [--to <ref>]` | Pull template fixes into an existing project with a 3-way merge. Client docs, glossary, decisions, intake, changes, Q&A sheets, deliverables, specs, `src/` and `tests/` are never touched. |
 | `npx @hoanghainh/aspec-kit doctor [--json]` | Check tools, Spec Kit skills, CODEOWNERS, formatter and branch protection. Prints a fix hint for each problem. |
 | `npx @hoanghainh/aspec-kit convert <file.xlsx\|pdf>` | Convert a 詳細設計 workbook or PDF into Markdown next to the original. Requires [uv](https://docs.astral.sh/uv/). |
+| `npx @hoanghainh/aspec-kit hook [install\|uninstall\|status]` | Install or manage the Git pre-commit guardrail hook (blocks conflict markers, guards `docs/01-03`, validates glossary, runs `format.sh`). |
+| `npx @hoanghainh/aspec-kit figma sync <url\|file-key>` | Sync Figma screen wireframes and vector assets (`svg`/`png`) into `docs/03-ui/<slug>/screens/` and update `figma-links.md`. |
+| `npx @hoanghainh/aspec-kit figma diff <v1.svg> <v2.svg>` | Compare two wireframe SVGs and generate a visual diff overlay SVG plus a Japanese Markdown report for 仕様変更. |
+| `npx @hoanghainh/aspec-kit view [--port P] [--export]` | Launch a local deliverables dashboard (Traceability, 質問票, テスト仕様書, 進捗報告) or export a standalone static HTML file (`--export`). |
 
 ---
 

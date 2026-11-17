@@ -5,6 +5,15 @@ import path from "node:path";
 import http from "node:http";
 import { parseArgs } from "node:util";
 
+const PKG_VERSION = (() => {
+  try {
+    const pkgPath = new URL("../../package.json", import.meta.url);
+    return JSON.parse(fs.readFileSync(pkgPath, "utf8")).version || "0.5.0";
+  } catch {
+    return "0.5.0";
+  }
+})();
+
 const isColorSupported =
   !process.env.NO_COLOR &&
   (process.stdout.isTTY || process.env.FORCE_COLOR !== undefined);
@@ -352,7 +361,7 @@ export function renderDashboardHtml(data) {
 <body>
   <header>
     <div>
-      <h1>⚡ ${data.projectName} <span class="badge">aspec-kit v0.4.0</span></h1>
+      <h1>⚡ ${data.projectName} <span class="badge">aspec-kit v${PKG_VERSION}</span></h1>
       <p style="color: var(--text-muted); font-size: 13px;">BrSE & Project Manager Deliverables Dashboard · ${data.rootPath}</p>
     </div>
     <div style="font-size: 12px; color: var(--text-muted);">

@@ -867,11 +867,27 @@ describe("aspec-kit update", () => {
     assert.throws(() => parseUpdateArgs(["a", "b"]), /Unexpected arguments/);
   });
 
-  test("isProtected covers client docs, memory, specs and src only", () => {
-    for (const p of ["docs/01-basic-design/a.md", "docs/02-detail-design/x", "docs/03-ui/y",
-      "docs/00-glossary.md", "docs/04-decisions/INDEX.md", "docs/05-lessons.md",
-      "docs/intake/a.md", "docs/changes/a.md", "docs/qa/a.md", "specs/x/spec.md",
-      "src/a.ts", "tests/a.test.ts", ".aspec-kit.json"]) {
+  test("isProtected covers client docs, memory, deliverables, specs and src only", () => {
+    for (const p of [
+      "docs/01-basic-design/a.md",
+      "docs/02-detail-design/x",
+      "docs/03-ui/y",
+      "docs/00-glossary.md",
+      "docs/04-decisions/INDEX.md",
+      "docs/05-lessons.md",
+      "docs/intake/a.md",
+      "docs/changes/a.md",
+      "docs/qa/a.md",
+      "docs/traceability.md",
+      "docs/test-specs/001-a.md",
+      "docs/reports/2026-11-01.md",
+      "docs/badges/traceability.svg",
+      "docs/deliverables.html",
+      "specs/x/spec.md",
+      "src/a.ts",
+      "tests/a.test.ts",
+      ".aspec-kit.json",
+    ]) {
       assert.equal(isProtected(p), true, p);
     }
     for (const p of ["docs/TEAM-WORKFLOW.md", "CLAUDE.md", ".claude/agents/a.md", "srcx/a", "docs/10-x"]) {
@@ -1477,22 +1493,30 @@ describe("aspec-kit figma diff", () => {
     assert.equal(dims2.height, 768);
   });
 
-  test("parseSvgElements extracts text, rects, and circles", () => {
+  test("parseSvgElements extracts text, rects, circles, paths, and resolves group transforms", () => {
     const svg = `
       <svg viewBox="0 0 500 500">
         <rect x="10" y="20" width="100" height="40" fill="#38bdf8" />
-        <text x="25" y="45" fill="#ffffff" font-size="14">Submit</text>
+        <g transform="translate(50, 100)">
+          <text x="25" y="45" fill="#ffffff" font-size="14">Submit</text>
+          <path d="M 10 20 L 30 40" fill="#22c55e" />
+        </g>
         <circle cx="50" cy="50" r="15" fill="#ef4444" />
       </svg>
     `;
     const elements = parseSvgElements(svg);
-    assert.equal(elements.length, 3);
+    assert.equal(elements.length, 4);
     assert.equal(elements[0].type, "text");
     assert.equal(elements[0].text, "Submit");
+    assert.equal(elements[0].x, 75);
+    assert.equal(elements[0].y, 145);
     assert.equal(elements[1].type, "rect");
     assert.equal(elements[1].width, 100);
     assert.equal(elements[2].type, "circle");
     assert.equal(elements[2].r, 15);
+    assert.equal(elements[3].type, "path");
+    assert.equal(elements[3].x, 60);
+    assert.equal(elements[3].y, 120);
   });
 
   test("diffSvgElements detects added, removed, and modified elements", () => {

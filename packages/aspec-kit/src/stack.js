@@ -68,7 +68,7 @@ export const STACK_CONFIGS = Object.freeze({
   python: Object.freeze({
     id: "python",
     label: "Python",
-    formatCmd: 'python3 -m black "$FILE"',
+    formatCmd: 'ruff format "$FILE"',
     allow: Object.freeze([
       "Bash(pytest)",
       "Bash(pytest *)",
@@ -81,7 +81,7 @@ export const STACK_CONFIGS = Object.freeze({
     ask: Object.freeze(["Bash(pip install *)", "Bash(uv add *)"]),
     techStackSection: [
       "- **Language / Runtime**: Python 3",
-      "- **Formatter (PostToolUse hook)**: `python3 -m black \"$FILE\"`",
+      "- **Formatter (PostToolUse hook)**: `ruff format \"$FILE\"`",
       "- **Quality gates**: `ruff` / `flake8` → `mypy` → `pytest`",
     ].join("\n"),
     ciTestSteps: [

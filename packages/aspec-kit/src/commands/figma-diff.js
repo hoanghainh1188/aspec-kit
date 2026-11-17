@@ -55,10 +55,44 @@ export function extractSvgDimensions(svgText) {
 
 /**
  * Lightweight SVG element parser extracting text, rects, paths, and circles
+ * while resolving parent `<g transform="translate(tx, ty)">` coordinate offsets.
  */
 export function parseSvgElements(svgText) {
   if (!svgText || typeof svgText !== "string") return [];
   const elements = [];
+
+  // Track <g> open/close tags with their translate(tx, ty) offsets
+  const groupEvents = [];
+  const groupTagRegex = /<\/?g\b[^>]*>/gi;
+  let gMatch;
+  while ((gMatch = groupTagRegex.exec(svgText)) !== null) {
+    const tagStr = gMatch[0];
+    if (tagStr.startsWith("</")) {
+      groupEvents.push({ index: gMatch.index, type: "close" });
+    } else if (!tagStr.endsWith("/>")) {
+      let tx = 0;
+      let ty = 0;
+      const trMatch = tagStr.match(/transform=["'][^"']*translate\(\s*([0-9.-]+)(?:[\s,]+([0-9.-]+))?\s*\)/i);
+      if (trMatch) {
+        tx = parseFloat(trMatch[1] || 0);
+        ty = parseFloat(trMatch[2] || 0);
+      }
+      groupEvents.push({ index: gMatch.index, type: "open", tx, ty });
+    }
+  }
+
+  const getOffsetAt = (pos) => {
+    const stack = [];
+    for (const ev of groupEvents) {
+      if (ev.index >= pos) break;
+      if (ev.type === "open") stack.push(ev);
+      else if (ev.type === "close") stack.pop();
+    }
+    return stack.reduce(
+      (acc, g) => ({ tx: acc.tx + g.tx, ty: acc.ty + g.ty }),
+      { tx: 0, ty: 0 }
+    );
+  };
 
   // 1. Extract <text> elements
   const textRegex = /<text\b([^>]*)>([\s\S]*?)<\/text>/gi;
@@ -68,8 +102,9 @@ export function parseSvgElements(svgText) {
     const textContent = match[2].replace(/<[^>]+>/g, "").trim();
     if (!textContent) continue;
 
-    const x = parseFloat((attrsStr.match(/\bx=["']([0-9.-]+)["']/i) || [])[1] || 0);
-    const y = parseFloat((attrsStr.match(/\by=["']([0-9.-]+)["']/i) || [])[1] || 0);
+    const { tx, ty } = getOffsetAt(match.index);
+    const x = parseFloat((attrsStr.match(/\bx=["']([0-9.-]+)["']/i) || [])[1] || 0) + tx;
+    const y = parseFloat((attrsStr.match(/\by=["']([0-9.-]+)["']/i) || [])[1] || 0) + ty;
     const fill = (attrsStr.match(/\bfill=["']([^"']+)["']/i) || [])[1] || "inherit";
     const fontSize = parseFloat((attrsStr.match(/\bfont-size=["']([0-9.-]+)["']/i) || [])[1] || 12);
 
@@ -89,8 +124,9 @@ export function parseSvgElements(svgText) {
   const rectRegex = /<rect\b([^>]*)\/?>/gi;
   while ((match = rectRegex.exec(svgText)) !== null) {
     const attrsStr = match[1];
-    const x = parseFloat((attrsStr.match(/\bx=["']([0-9.-]+)["']/i) || [])[1] || 0);
-    const y = parseFloat((attrsStr.match(/\by=["']([0-9.-]+)["']/i) || [])[1] || 0);
+    const { tx, ty } = getOffsetAt(match.index);
+    const x = parseFloat((attrsStr.match(/\bx=["']([0-9.-]+)["']/i) || [])[1] || 0) + tx;
+    const y = parseFloat((attrsStr.match(/\by=["']([0-9.-]+)["']/i) || [])[1] || 0) + ty;
     const width = parseFloat((attrsStr.match(/\bwidth=["']([0-9.-]+)["']/i) || [])[1] || 0);
     const height = parseFloat((attrsStr.match(/\bheight=["']([0-9.-]+)["']/i) || [])[1] || 0);
     const fill = (attrsStr.match(/\bfill=["']([^"']+)["']/i) || [])[1] || "none";
@@ -116,8 +152,9 @@ export function parseSvgElements(svgText) {
   const circleRegex = /<(?:circle|ellipse)\b([^>]*)\/?>/gi;
   while ((match = circleRegex.exec(svgText)) !== null) {
     const attrsStr = match[1];
-    const cx = parseFloat((attrsStr.match(/\bcx=["']([0-9.-]+)["']/i) || [])[1] || 0);
-    const cy = parseFloat((attrsStr.match(/\bcy=["']([0-9.-]+)["']/i) || [])[1] || 0);
+    const { tx, ty } = getOffsetAt(match.index);
+    const cx = parseFloat((attrsStr.match(/\bcx=["']([0-9.-]+)["']/i) || [])[1] || 0) + tx;
+    const cy = parseFloat((attrsStr.match(/\bcy=["']([0-9.-]+)["']/i) || [])[1] || 0) + ty;
     const r = parseFloat((attrsStr.match(/\br=["']([0-9.-]+)["']/i) || [])[1] || 0);
     const fill = (attrsStr.match(/\bfill=["']([^"']+)["']/i) || [])[1] || "none";
 
@@ -127,6 +164,29 @@ export function parseSvgElements(svgText) {
       cx,
       cy,
       r,
+      fill,
+      rawAttrs: attrsStr,
+    });
+  }
+
+  // 4. Extract <path> elements (icons, vector shapes, outlined text)
+  const pathRegex = /<path\b([^>]*)\/?>/gi;
+  while ((match = pathRegex.exec(svgText)) !== null) {
+    const attrsStr = match[1];
+    const d = ((attrsStr.match(/\bd=["']([^"']+)["']/i) || [])[1] || "").trim();
+    if (!d) continue;
+    const { tx, ty } = getOffsetAt(match.index);
+    const mCoord = d.match(/^[Mm]\s*([0-9.-]+)[\s,]+([0-9.-]+)/);
+    const x = (mCoord ? parseFloat(mCoord[1]) : 0) + tx;
+    const y = (mCoord ? parseFloat(mCoord[2]) : 0) + ty;
+    const fill = (attrsStr.match(/\bfill=["']([^"']+)["']/i) || [])[1] || "none";
+
+    elements.push({
+      type: "path",
+      tag: "path",
+      d,
+      x,
+      y,
       fill,
       rawAttrs: attrsStr,
     });
@@ -177,6 +237,11 @@ export function diffSvgElements(oldElements, newElements, { threshold = 2 } = {}
           matchedOldIndex = j;
           break;
         }
+      } else if (newItem.type === "path") {
+        if (oldItem.d === newItem.d) {
+          matchedOldIndex = j;
+          break;
+        }
       }
     }
 
@@ -199,7 +264,13 @@ export function diffSvgElements(oldElements, newElements, { threshold = 2 } = {}
           isModified = true;
           changes.push(`Color changed: ${oldItem.fill} ➔ ${newItem.fill}`);
         }
-      } else if (newItem.type === "rect") {
+      } else if (newItem.type === "rect" || newItem.type === "path") {
+        const dx = Math.abs((oldItem.x || 0) - (newItem.x || 0));
+        const dy = Math.abs((oldItem.y || 0) - (newItem.y || 0));
+        if (newItem.type === "path" && (dx > threshold || dy > threshold)) {
+          isModified = true;
+          changes.push(`Position moved by (${Math.round(newItem.x - oldItem.x)}, ${Math.round(newItem.y - oldItem.y)})px`);
+        }
         if (oldItem.fill !== newItem.fill && oldItem.fill !== "none" && newItem.fill !== "none") {
           isModified = true;
           changes.push(`Fill changed: ${oldItem.fill} ➔ ${newItem.fill}`);
