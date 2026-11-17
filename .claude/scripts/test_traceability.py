@@ -110,6 +110,23 @@ class TraceabilityTest(unittest.TestCase):
         self.assertIn("| **AC 2** |", md)
         self.assertIn("✅ Covered", md)
 
+    def test_scans_go_and_java_test_cases(self) -> None:
+        self.write(
+            "src/features/demo/approve_test.go",
+            'package demo\nimport "testing"\nfunc TestApprove_AC_1(t *testing.T) {}\n',
+        )
+        self.write(
+            "src/features/demo/ApproveTest.java",
+            'import org.junit.jupiter.api.Test;\nclass ApproveTest {\n  @Test // AC 2\n  void shouldApproveReservation() {}\n}\n',
+        )
+        _, test_cases = traceability.scan_feature_code_and_tests(self.root, "demo")
+        go_tests = [tc for tc in test_cases if tc["file"].endswith("_test.go")]
+        java_tests = [tc for tc in test_cases if tc["file"].endswith("Test.java")]
+        self.assertEqual(len(go_tests), 1)
+        self.assertEqual(go_tests[0]["acs"], [1])
+        self.assertEqual(len(java_tests), 1)
+        self.assertEqual(java_tests[0]["acs"], [2])
+
 
 if __name__ == "__main__":
     unittest.main()

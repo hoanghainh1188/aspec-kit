@@ -32,7 +32,7 @@ import {
 
 export const CONFLICT_SUFFIX = ".aspec-new";
 
-/** Project-owned paths: client design docs, memory, specs and code. `update` never touches them. */
+/** Project-owned paths: client design docs, memory, deliverables, specs and code. `update` never touches them. */
 export const PROTECTED_PATHS = Object.freeze([
   "docs/00-glossary.md",
   "docs/04-decisions",
@@ -40,6 +40,11 @@ export const PROTECTED_PATHS = Object.freeze([
   "docs/intake",
   "docs/changes",
   "docs/qa",
+  "docs/traceability.md",
+  "docs/test-specs",
+  "docs/reports",
+  "docs/badges",
+  "docs/deliverables.html",
   "specs",
   "src",
   "tests",
