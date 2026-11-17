@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-17
+
+### Fixed
+
+- **CLI Protected Deliverables (`aspec-kit update`)**: Protect `docs/traceability.md`, `docs/test-specs`, `docs/reports`, `docs/badges`, and `docs/deliverables.html` during template upgrades so project-owned deliverables are never overwritten or flagged as conflicts ([#73](https://github.com/hoanghainh1188/aspec-kit/pull/73)).
+- **Whitespace-Safe Git Pre-commit Hook (`aspec-kit hook`)**: Replace unquoted word-splitting loops over `$STAGED_FILES` with `while IFS= read -r` and escape file paths before piping JSON into `.claude/hooks/format.sh`, preventing failures on Japanese design filenames containing spaces ([#73](https://github.com/hoanghainh1188/aspec-kit/pull/73)).
+- **Figma Visual Diff Group Transforms & `<path>` Support (`aspec-kit figma diff`)**: Resolve nested `<g transform="translate(tx, ty)">` coordinate offsets when extracting SVG elements and add `<path>` element parsing and diffing ([#73](https://github.com/hoanghainh1188/aspec-kit/pull/73)).
+- **Multi-Stack Test Discovery (`traceability.py`)**: Extend `TEST_CASE_RE` and `AC_GROUP_RE` to recognize Go (`func Test...`, `t.Run(...)`) and Java JUnit (`@Test`, `@DisplayName(...)`) test cases as well as underscore-separated AC identifiers (`TestApprove_AC_1`), matching `--stack go|java` ([#73](https://github.com/hoanghainh1188/aspec-kit/pull/73)).
+- **Stack, Dashboard Version & Documentation Consistency**:
+  - Unify Python formatter command in `stack.js` to `ruff format "$FILE"` to match the interactive onboarding wizard and CI workflow ([#73](https://github.com/hoanghainh1188/aspec-kit/pull/73)).
+  - Read package version dynamically in `dashboard.js` instead of a hardcoded version badge ([#73](https://github.com/hoanghainh1188/aspec-kit/pull/73)).
+  - Document `hook`, `figma sync`, `figma diff`, and `view` commands in the root `README.md` CLI table ([#73](https://github.com/hoanghainh1188/aspec-kit/pull/73)).
+
 ## [0.5.0] - 2026-11-01
 
 ### Added
@@ -114,7 +127,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release of `aspec-kit` template, Claude Code plugin (`.claude-plugin/`), and zero-dependency `@hoanghainh/aspec-kit` npm CLI scaffolder ([#2](https://github.com/hoanghainh1188/aspec-kit/pull/2), [#3](https://github.com/hoanghainh1188/aspec-kit/pull/3), [#4](https://github.com/hoanghainh1188/aspec-kit/pull/4)).
 - 4 core subagents (`design-intake`, `code-reviewer`, `security-reviewer`, `glossary-steward`), `/design-to-code` runbook, 5-tier Git-backed project memory (`docs/00-glossary.md`, `docs/04-decisions/`, `docs/05-lessons.md`), and worked reference feature `000-example-reservation`.
 
-[Unreleased]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/hoanghainh1188/aspec-kit/compare/v0.3.0...v0.3.1
